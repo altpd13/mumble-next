@@ -1,8 +1,12 @@
+import Head from 'next/head'
 
-const IndexPage = () => (
-  <div>
-    Helo
-  </div>
-)
+const IndexPage = () => {
+
+  return (
+    <>
+      
+    </>
+  )
+}
 
 export default IndexPage
