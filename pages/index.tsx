@@ -1,35 +1,65 @@
-import Head from 'next/head'
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
 import React from 'react'
+import WorkerBasedMumbleConnector from "../utils/worker-client";
+import {filterArray} from "../utils/filterArray";
+import MumbleClient from 'mumble-client'
+import {log} from "util";
+import {url} from "inspector";
+
+let ui: GlobalBindings;
 
 class GlobalBindings {
-  constructor (config) {
+  config: any;
+  settings: Settings;
+  connector: WorkerBasedMumbleConnector;
+  client: any
+  userContextMenu: ContextMenu;
+  channelContextMenu: ContextMenu;
+  connectDialog: ConnectDialog;
+  connectErrorDialog: ConnectErrorDialog;
+  connectionInfo: ConnectionInfo;
+  commentDialog: CommentDialog;
+  settingsDialog: string;
+  minimalView: boolean;
+  log: string[];
+  remoteHost: string;
+  remotePort: string;
+  thisUser: string;
+  root: string;
+  avatarView: string;
+  messageBox: string;
+  toolbarHorizontal: boolean;
+  selected: string;
+  thisMute: string;
+  thisDeaf: string;
+
+  constructor(config: mumbleWebConfig) {
     this.config = config
-    this.settings = new Settings(config.settings)
+    this.settings = new Settings({defaults: config.settings})
     this.connector = new WorkerBasedMumbleConnector()
     this.client = null
-    this.userContextMenu = new ContextMenu()
-    this.channelContextMenu = new ContextMenu()
+    this.userContextMenu = new ContextMenu(0, 0, null)
+    this.channelContextMenu = new ContextMenu(0, 0, null)
     this.connectDialog = new ConnectDialog()
     this.connectErrorDialog = new ConnectErrorDialog(this.connectDialog)
     this.connectionInfo = new ConnectionInfo(this)
     this.commentDialog = new CommentDialog()
-    this.settingsDialog = ko.observable()
-    this.minimalView = ko.observable(false)
-    this.log = ko.observableArray()
-    this.remoteHost = ko.observable()
-    this.remotePort = ko.observable()
-    this.thisUser = ko.observable()
-    this.root = ko.observable()
-    this.avatarView = ko.observable()
-    this.messageBox = ko.observable('')
-    this.toolbarHorizontal = ko.observable(!this.settings.toolbarVertical)
-    this.selected = ko.observable()
-    this.selfMute = ko.observable()
-    this.selfDeaf = ko.observable()
+    this.settingsDialog = ""
+    this.minimalView = false
+    this.log = []
+    this.remoteHost = ""
+    this.remotePort = ""
+    this.thisUser = ""
+    this.root = ""
+    this.avatarView = ""
+    this.messageBox = ""
+    this.toolbarHorizontal = !this.settings.toolbarVertical
+    this.selected = ""
+    this.thisMute = ""
+    this.thisDeaf = ""
 
-    this.selfMute.subscribe(mute => {
+    this.thisMute.subscribe(mute => {
       if (voiceHandler) {
         voiceHandler.setMute(mute)
       }
@@ -67,8 +97,8 @@ class GlobalBindings {
       this.settingsDialog(null)
     }
 
-    this.getTimeString = () => {
-      return '[' + new Date().toLocaleTimeString('en-US') + ']'
+    this.getTimestring = () => {
+      return '[' + new Date().toLocaleTimestring('en-US') + ']'
     }
 
     this.connect = (username, host, port, tokens = [], password, channelName = "") => {
@@ -102,15 +132,15 @@ class GlobalBindings {
         window.matrixWidget.setAlwaysOnScreen(true)
 
         // Register all channels, recursively
-        if(channelName.indexOf("/") != 0) {
-          channelName = "/"+channelName;
+        if (channelName.indexOf("/") != 0) {
+          channelName = "/" + channelName;
         }
         const registerChannel = (channel, channelPath) => {
           this._newChannel(channel)
-          if(channelPath === channelName) {
-            client.self.setChannel(channel)
+          if (channelPath === channelName) {
+            client.this.setChannel(channel)
           }
-          channel.children.forEach(ch => registerChannel(ch, channelPath+"/"+ch.name))
+          channel.children.forEach(ch => registerChannel(ch, channelPath + "/" + ch.name))
         }
         registerChannel(client.root, "")
 
@@ -124,7 +154,7 @@ class GlobalBindings {
 
         // Handle messages
         client.on('message', (sender, message, users, channels, trees) => {
-          sender = sender || { __ui: 'Server' }
+          sender = sender || {__ui: 'Server'}
           ui.log.push({
             type: 'chat-message',
             user: sender.__ui,
@@ -137,12 +167,12 @@ class GlobalBindings {
         client.on('denied', (type) => {
           ui.log.push({
             type: 'generic',
-            value: 'Permission denied : '+ type
+            value: 'Permission denied : ' + type
           })
         })
 
         // Set own user and root channel
-        this.thisUser(client.self.__ui)
+        this.thisUser(client.this.__ui)
         this.root(client.root.__ui)
         // Upate linked channels
         this._updateLinks()
@@ -157,10 +187,10 @@ class GlobalBindings {
         // Startup audio input processing
         this._updateVoiceHandler()
         // Tell server our mute/deaf state (if necessary)
-        if (this.selfDeaf()) {
-          this.client.setSelfDeaf(true)
-        } else if (this.selfMute()) {
-          this.client.setSelfMute(true)
+        if (this.thisDeaf()) {
+          this.client.setthisDeaf(true)
+        } else if (this.thisMute()) {
+          this.client.setthisMute(true)
         }
       }, err => {
         if (err.$type && err.$type.name === 'Reject') {
@@ -180,16 +210,16 @@ class GlobalBindings {
         mute: 'mute',
         deaf: 'deaf',
         suppress: 'suppress',
-        selfMute: 'selfMute',
-        selfDeaf: 'selfDeaf',
+        thisMute: 'thisMute',
+        thisDeaf: 'thisDeaf',
         texture: 'rawTexture',
         textureHash: 'textureHash',
         comment: 'comment'
       }
       var ui = user.__ui = {
         model: user,
-        talking: ko.observable('off'),
-        channel: ko.observable()
+        talking: 'off',
+        channel: ""
       }
       ui.texture = ko.pureComputed(() => {
         let raw = ui.rawTexture()
@@ -212,7 +242,8 @@ class GlobalBindings {
             if (this.thisUser().channel() !== ui.channel()) return false
             break
           case 'never':
-          default: return false
+          default:
+            return false
         }
         if (!ui.texture()) {
           if (ui.textureHash()) {
@@ -251,14 +282,14 @@ class GlobalBindings {
         return this.thisUser() === ui // TODO check for perms
       }
       ui.toggleMute = () => {
-        if (ui.selfMute()) {
+        if (ui.thisMute()) {
           this.requestUnmute(ui)
         } else {
           this.requestMute(ui)
         }
       }
       ui.toggleDeaf = () => {
-        if (ui.selfDeaf()) {
+        if (ui.thisDeaf()) {
           this.requestUndeaf(ui)
         } else {
           this.requestDeaf(ui)
@@ -273,7 +304,7 @@ class GlobalBindings {
         input.addEventListener('change', () => {
           let reader = new window.FileReader()
           reader.onload = () => {
-            this.client.setSelfTexture(reader.result)
+            this.client.setthisTexture(reader.result)
           }
           reader.readAsArrayBuffer(input.files[0])
         })
@@ -283,7 +314,7 @@ class GlobalBindings {
         user.clearTexture()
       }
       Object.entries(simpleProperties).forEach(key => {
-        ui[key[1]] = ko.observable(user[key[0]])
+        ui[key[1]] = user[key[0]]
       })
       ui.state = ko.pureComputed(userToState, ui)
       if (user.channel) {
@@ -348,11 +379,11 @@ class GlobalBindings {
       }
       var ui = channel.__ui = {
         model: channel,
-        expanded: ko.observable(true),
-        parent: ko.observable(),
-        channels: ko.observableArray(),
-        users: ko.observableArray(),
-        linked: ko.observable(false)
+        expanded: true,
+        parent: "",
+        channels: [],
+        users: [],
+        linked: false
       }
       ui.userCount = () => {
         return ui.channels().reduce((acc, c) => acc + c.userCount(), ui.users().length)
@@ -380,7 +411,7 @@ class GlobalBindings {
         return false // TODO check for perms and implement
       }
       Object.entries(simpleProperties).forEach(key => {
-        ui[key[1]] = ko.observable(channel[key[0]])
+        ui[key[1]] = channel[key[0]]
       })
       if (channel.parent) {
         ui.parent(channel.parent.__ui)
@@ -453,7 +484,7 @@ class GlobalBindings {
           this.thisUser().talking('off')
         }
       })
-      if (this.selfMute()) {
+      if (this.thisMute()) {
         voiceHandler.setMute(true)
       }
 
@@ -502,13 +533,13 @@ class GlobalBindings {
         target.model.sendMessage(message)
         if (target.users) { // Channel
           this.log.push({
-            type: 'chat-message-self',
+            type: 'chat-message-this',
             message: sanitize(message),
             channel: target
           })
         } else { // User
           this.log.push({
-            type: 'chat-message-self',
+            type: 'chat-message-this',
             message: sanitize(message),
             user: target
           })
@@ -525,10 +556,10 @@ class GlobalBindings {
         delete currentUrl.search
 
         // get full channel path
-        if( channel.parent() ){ // in case this channel is not Root
+        if (channel.parent()) { // in case this channel is not Root
           let parent = channel.parent()
           currentUrl.query.channelName = channel.name()
-          while( parent.parent() ){
+          while (parent.parent()) {
             currentUrl.query.channelName = parent.name() + '/' + currentUrl.query.channelName
             parent = parent.parent()
           }
@@ -544,11 +575,11 @@ class GlobalBindings {
 
     this.requestMute = user => {
       if (user === this.thisUser()) {
-        this.selfMute(true)
+        this.thisMute(true)
       }
       if (this.connected()) {
         if (user === this.thisUser()) {
-          this.client.setSelfMute(true)
+          this.client.setthisMute(true)
         } else {
           user.model.setMute(true)
         }
@@ -557,12 +588,12 @@ class GlobalBindings {
 
     this.requestDeaf = user => {
       if (user === this.thisUser()) {
-        this.selfMute(true)
-        this.selfDeaf(true)
+        this.thisMute(true)
+        this.thisDeaf(true)
       }
       if (this.connected()) {
         if (user === this.thisUser()) {
-          this.client.setSelfDeaf(true)
+          this.client.setthisDeaf(true)
         } else {
           user.model.setDeaf(true)
         }
@@ -571,12 +602,12 @@ class GlobalBindings {
 
     this.requestUnmute = user => {
       if (user === this.thisUser()) {
-        this.selfMute(false)
-        this.selfDeaf(false)
+        this.thisMute(false)
+        this.thisDeaf(false)
       }
       if (this.connected()) {
         if (user === this.thisUser()) {
-          this.client.setSelfMute(false)
+          this.client.setthisMute(false)
         } else {
           user.model.setMute(false)
         }
@@ -585,11 +616,11 @@ class GlobalBindings {
 
     this.requestUndeaf = user => {
       if (user === this.thisUser()) {
-        this.selfDeaf(false)
+        this.thisDeaf(false)
       }
       if (this.connected()) {
         if (user === this.thisUser()) {
-          this.client.setSelfDeaf(false)
+          this.client.setthisDeaf(false)
         } else {
           user.model.setDeaf(false)
         }
@@ -608,7 +639,7 @@ class GlobalBindings {
         channel.linked(allLinked.indexOf(channel.model) !== -1)
       })
 
-      function findLinks (channel, knownLinks) {
+      function findLinks(channel, knownLinks) {
         knownLinks.push(channel)
         channel.links.forEach(next => {
           if (next && knownLinks.indexOf(next) === -1) {
@@ -623,7 +654,7 @@ class GlobalBindings {
         return knownLinks
       }
 
-      function getAllChannels (channel, channels) {
+      function getAllChannels(channel, channels) {
         channels.push(channel)
         channel.channels().forEach(next => getAllChannels(next, channels))
         return channels
@@ -645,41 +676,213 @@ class GlobalBindings {
     }
   }
 }
-var ui = new GlobalBindings(window.mumbleWebConfig)
 
-function ConnectDialog () {
-  this.address = ko.observable('')
-  this.port = ko.observable('')
-  this.tokenToAdd = ko.observable('')
-  this.selectedTokens = ko.observableArray([])
-  this.tokens = ko.observableArray([])
-  this.username = ko.observable('')
-  this.password = ko.observable('')
-  this.channelName = ko.observable('')
-  this.joinOnly = ko.observable(false)
-  this.visible = ko.observable(true)
-  this.show = this.visible.bind(this.visible, true)
-  this.hide = this.visible.bind(this.visible, false)
-  this.connect = function () {
-    this.hide()
-    ui.connect(this.username(), this.address(), this.port(), this.tokens(), this.password(), this.channelName())
-  }
+ui = new GlobalBindings(window.mumbleWebConfig);
 
-  this.addToken = function() {
-    if ((this.tokenToAdd() != "") && (this.tokens.indexOf(this.tokenToAdd()) < 0)) {
-      this.tokens.push(this.tokenToAdd())
+class Settings {
+  voiceMode: string;
+  pttKey: string;
+  vadLevel: number;
+  toolbarVertical: Boolean;
+  showAvatars: string;
+  userCountInChannelName: Boolean;
+  audioBitrate: number;
+  samplesPerPacket: number;
+
+  constructor({defaults}: { defaults: any }) {
+    function load(key: string) {
+      return window.localStorage.getItem('mumble.' + key);
     }
-    this.tokenToAdd("")
+
+    this.voiceMode = load('voiceMode') || defaults.voiceMode
+    this.pttKey = load('pttKey') || defaults.pttKey
+    this.vadLevel = load('vadLevel') || defaults.vadLevel
+    this.toolbarVertical = load('toolbarVertical') || defaults.toolbarVertical
+    this.showAvatars = load('showAvatars') || defaults.showAvatars
+    this.userCountInChannelName = load('userCountInChannelName') || defaults.userCountInChannelName
+    this.audioBitrate = Number(load('audioBitrate')) || defaults.audioBitrate
+    this.samplesPerPacket = Number(load('samplesPerPacket')) || defaults.samplesPerPacket
   }
 
-  this.removeSelectedTokens = function() {
-      this.tokens.removeAll(this.selectedTokens())
-      this.selectedTokens([])
+  save() {
+    const save = (key: string, val: any) => window.localStorage.setItem('mumble.' + key, val)
+    save('voiceMode', this.voiceMode)
+    save('pttKey', this.pttKey)
+    save('vadLevel', this.vadLevel)
+    save('toolbarVertical', this.toolbarVertical)
+    save('showAvatars', this.showAvatars)
+    save('userCountInChannelName', this.userCountInChannelName)
+    save('audioBitrate', this.audioBitrate)
+    save('samplesPerPacket', this.samplesPerPacket)
   }
 }
 
+class ContextMenu {
+  posX: number;
+  posY: number;
+  target: any;
+
+  constructor(posX: number, posY: number, target: any) {
+    this.posX = posX
+    this.posY = posY
+    this.target = target
+  }
+
+}
+
+class ConnectDialog {
+  address: string;
+  port: string;
+  tokenToAdd: string;
+  selectedTokens: string[];
+  tokens: string[];
+  username: string;
+  password: string;
+  channelName: string;
+  joinOnly: Boolean;
+  visible: any;
+  show: any;
+  hide: any;
+
+  constructor() {
+    this.address = ""
+    this.port = ""
+    this.tokenToAdd = ""
+    this.selectedTokens = []
+    this.tokens = []
+    this.username = ""
+    this.password = ""
+    this.channelName = ""
+    this.joinOnly = false
+    this.visible = true
+    this.show = this.visible.bind(this.visible, true)
+    this.hide = this.visible.bind(this.visible, false)
+  }
+
+  connect() {
+    this.hide()
+    ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
+  }
+
+  addToken() {
+    if ((this.tokenToAdd != "") && (this.tokens.indexOf(this.tokenToAdd) < 0)) {
+      this.tokens.push(this.tokenToAdd)
+    }
+    this.tokenToAdd = ""
+  }
+
+  removeSelectedTokens() {
+    this.tokens = filterArray(this.tokens, this.selectedTokens)
+    this.selectedTokens = []
+  }
+
+}
+
+class ConnectErrorDialog {
+  type: number;
+  reason: string;
+  username: string;
+  password: string;
+  joinOnly: Boolean;
+  visible: any;
+  show: any;
+  hide: any;
+
+  constructor(connectDialog: ConnectDialog) {
+    this.type = 0
+    this.reason = ""
+    this.username = connectDialog.username
+    this.password = connectDialog.password
+    this.joinOnly = connectDialog.joinOnly
+    this.visible = false
+    this.show = this.visible.bind(this.visible, true)
+    this.hide = this.visible.bind(this.visible, false)
+  }
+
+}
+
+class ConnectionInfo {
+  _ui: GlobalBindings;
+  visible: Boolean;
+  serverVersion: string;
+  latencyMs: number;
+  latencyDeviation: number;
+  remoteHost: string;
+  remotePort: string;
+  maxBitrate: number;
+  currentBitrate: number;
+  maxBandwidth: number;
+  currentBandwidth: number;
+  codec: string;
+
+  constructor(ui: GlobalBindings) {
+    this._ui = ui
+    this.visible = false
+    this.serverVersion = ""
+    this.latencyMs = NaN
+    this.latencyDeviation = NaN
+    this.remoteHost = ""
+    this.remotePort = ""
+    this.maxBitrate = NaN
+    this.currentBitrate = NaN
+    this.maxBandwidth = NaN
+    this.currentBandwidth = NaN
+    this.codec = ""
+
+  }
+
+  show() {
+    this.update()
+    this.visible = true
+  }
+
+  hide() {
+    this.visible = false
+  }
+
+  update() {
+    let client = this._ui.client
+
+    this.serverVersion = client.serverVersion
+
+    let dataStats = client.dataStats
+    if (dataStats) {
+      this.latencyMs = dataStats.mean
+      this.latencyDeviation = Math.sqrt(dataStats.variance)
+    }
+    this.remoteHost = this._ui.remoteHost()
+    this.remotePort = this._ui.remotePort()
+
+    let spp = this._ui.settings.samplesPerPacket
+    let maxBitrate = client.getMaxBitrate(spp, false)
+    let maxBandwidth = client.maxBandwidth
+    let actualBitrate = client.getActualBitrate(spp, false)
+    let actualBandwidth = MumbleClient.calcEnforcableBandwidth(actualBitrate, spp, false)
+    this.maxBitrate = maxBitrate
+    this.currentBitrate = actualBitrate
+    this.maxBandwidth = maxBandwidth
+    this.currentBandwidth = actualBandwidth
+    this.codec = 'Opus' // only one supported for sending
+  }
+}
+
+class CommentDialog {
+  visible: Boolean;
+
+  constructor() {
+    this.visible = false
+  }
+
+  show() {
+    this.visible = true
+  }
+}
+
+ui = new GlobalBindings(window.mumbleWebConfig);
+
 class MatrixWidget {
   widgetId: null
+
   constructor() {
     this.widgetId = null
     window.addEventListener('message', this.onMessage.bind(this))
@@ -716,7 +919,7 @@ class MatrixWidget {
     this.sendMessage({
       action: 'set_always_on_screen',
       value: value, // once for spec compliance
-      data: { value: value } // and once for Riot
+      data: {value: value} // and once for Riot
     })
   }
 
@@ -724,7 +927,7 @@ class MatrixWidget {
     if (!this.widgetId) return
     message.api = message.api || 'fromWidget'
     message.widgetId = message.widgetId || this.widgetId
-    message.requestId = message.requestId || Math.random().toString(36)
+    message.requestId = message.requestId || Math.random().tostring(36)
     window.parent.postMessage(message, '*')
   }
 
@@ -784,10 +987,11 @@ class index extends React.Component {
     }
     window.mumbleUi = ui
   }
+
   render() {
     return (
       <>
-        <IndexPage />
+        <IndexPage/>
       </>
     )
   }
@@ -796,10 +1000,10 @@ class index extends React.Component {
 const IndexPage = () => {
   return (
     <>
-      <Loading />
+      <Loading/>
       <Container isMinimal={false}
-        visible={false}
-        joinOnly={false}
+                 visible={false}
+                 joinOnly={false}
       />
     </>
   )
