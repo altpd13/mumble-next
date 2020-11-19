@@ -1,6 +1,6 @@
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
-import React from 'react'
+import React, { useState } from 'react'
 import WorkerBasedMumbleConnector from "../utils/worker-client";
 import {filterArray} from "../utils/filterArray";
 import MumbleClient from 'mumble-client'
@@ -882,7 +882,6 @@ ui = new GlobalBindings(window.mumbleWebConfig);
 
 class MatrixWidget {
   widgetId: null
-
   constructor() {
     this.widgetId = null
     window.addEventListener('message', this.onMessage.bind(this))
@@ -919,7 +918,7 @@ class MatrixWidget {
     this.sendMessage({
       action: 'set_always_on_screen',
       value: value, // once for spec compliance
-      data: {value: value} // and once for Riot
+      data: { value: value } // and once for Riot
     })
   }
 
@@ -927,7 +926,7 @@ class MatrixWidget {
     if (!this.widgetId) return
     message.api = message.api || 'fromWidget'
     message.widgetId = message.widgetId || this.widgetId
-    message.requestId = message.requestId || Math.random().tostring(36)
+    message.requestId = message.requestId || Math.random().toString(36)
     window.parent.postMessage(message, '*')
   }
 
@@ -985,7 +984,7 @@ class index extends React.Component {
         'theme': 'MetroMumbleLight'
       }
     }
-    window.mumbleUi = ui
+    // window.mumbleUi = ui
   }
 
   render() {
@@ -996,15 +995,25 @@ class index extends React.Component {
     )
   }
 }
+export default index
 
+//**********************************/
+//***                              */
+//***      *************************/
+//***      *************************/
+//***      *************************/
+//***                              */
+//**********************************/
 const IndexPage = () => {
+  let props = {
+    visible: "true",
+    isMinimal: "true",
+    joinOnly: "false"
+  }
   return (
     <>
-      <Loading/>
-      <Container isMinimal={false}
-                 visible={false}
-                 joinOnly={false}
-      />
+      <Loading />
+      <Container {...props} />
     </>
   )
 }
@@ -1018,12 +1027,14 @@ const Loading = () => {
 
 const Container = (props: any) => {
   const isMinimal = props.isMinimal
-  const visible = props.visible
-  const joinOnly = props.joinOnly
+  let stuff = {
+    visible: props.visible,
+    joinOnly: props.joinOnly
+  }
   if (isMinimal) {
     return (
       <div id='contianer'>
-
+        <ConnectBox {...stuff} />
       </div>
     )
   } else {
@@ -1035,4 +1046,111 @@ const Container = (props: any) => {
   }
 }
 
-export default index
+const ConnectBox = (props: any) => {
+  const visible = props.visible
+  const joinOnly = props.joinOnly
+  if (visible && !joinOnly) {
+    return (
+      <>
+        <ConnectBoxDialog />
+      </>
+    )
+  } else if (visible && joinOnly) {
+    return (
+      <>
+        <ConnectBoxDialog />
+      </>
+    )
+  } else if (visible) {
+    return (
+      <>
+      </>
+    )
+  } else {
+    return (
+      <div>Error with visible and joinonly :( fuck you</div>
+    )
+  }
+}
+
+class ConnectBoxDialog extends React.Component<any, any> {
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      address: '',
+      port: '',
+      username: '',
+      password: ''
+    }
+    this.handleChange = this.handleChange.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
+  }
+
+  handleChange = (event: any) => {
+    this.setState({
+      [event.target.name]: event.target.value
+    });
+  }
+
+  handleSubmit(event: any) {
+    event.preventDefault()
+  }
+
+  render() {
+    return (
+      <div className="connect-dialog dialog" >
+        <div id="connect-dialog_title" className="dialog-header">
+          Connect to Server
+          </div>
+        <form onSubmit={this.handleSubmit}>
+          <table>
+            <tbody>
+              <tr /*data-bind="if: $root.config.connectDialog.address"*/>
+                <td id="connect-dialog_input_address">Address</td>
+                <td><input name="address" id="address" type="text" value={this.state.address} onChange={this.handleChange} required /></td>
+              </tr>
+              <tr /*data-bind="if: $root.config.connectDialog.port"*/>
+                <td id="connect-dialog_input_port">Port</td>
+                <td><input name="port" id="port" type="text" value={this.state.port} onChange={this.handleChange} required /></td>
+              </tr>
+              <tr /*data-bind="if: $root.config.connectDialog.username"*/>
+                <td id="connect-dialog_input_username">Username</td>
+                <td><input name="username" id="username" type="text" value={this.state.username} onChange={this.handleChange} required /></td>
+              </tr>
+              <tr /*data-bind="if: $root.config.connectDialog.password"*/>
+                <td id="connect-dialog_input_password">Password</td>
+                <td><input name="password" id="password" type="text" value={this.state.password} onChange={this.handleChange} /></td>
+              </tr>
+              <tr /*data-bind="if: $root.config.connectDialog.token"*/>
+                <td id="connect-dialog_input_tokens">Tokens</td>
+                <td>
+                  <input type="text" data-bind='value: tokenToAdd, valueUpdate: "afterkeydown"' />
+                </td>
+              </tr>
+              <tr data-bind="if: $root.config.connectDialog.token">
+                <td></td>
+                <td>
+                  <button id="connect-dialog_controls_remove" className="dialog-submit" type="button" data-bind="enable: selectedTokens().length > 0, click: removeSelectedTokens()">Remove</button>
+                  <button id="connect-dialog_controls_add" className="dialog-submit" type="button" data-bind="enable: tokenToAdd().length > 0, click: addToken()">Add</button>
+                </td>
+              </tr>
+              <tr data-bind="if: $root.config.connectDialog.token, visible: tokens().length > 0">
+                <td></td>
+                <td><select id="token" /**!multiple='true'*/ height="5" data-bind="options:tokens, selectedOptions:selectedTokens"></select></td>
+              </tr>
+              <tr data-bind="if: $root.config.connectDialog.channelName">
+                <td>Channel</td>
+                <td><input id="channelName" type="text" data-bind="value: channelName" /></td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="dialog-footer">
+            <input id="connect-dialog_controls_cancel" className="dialog-close" type="button" data-bind="click: hide" value="Cancel" />
+            <input id="connect-dialog_controls_connect" className="dialog-submit" type="submit" value="Connect" />
+          </div>
+        </form>
+      </div>
+    )
+  }
+}
+
