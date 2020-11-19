@@ -3,9 +3,9 @@ import '../styles/MetroMumbleDark/loading.scss'
 import React, { useState } from 'react'
 import WorkerBasedMumbleConnector from "../utils/worker-client";
 import {filterArray} from "../utils/filterArray";
-import MumbleClient from 'mumble-client'
 import {log} from "util";
 import {url} from "inspector";
+const MumbleClient = require('mumble-client')
 
 let ui: GlobalBindings;
 
@@ -935,7 +935,7 @@ class MatrixWidget {
     event.source.postMessage(event.data, event.origin)
   }
 }
-
+//************ INDEX ****************/
 declare global {
   interface Window {
     matrixWidget: any;
@@ -997,13 +997,7 @@ class index extends React.Component {
 }
 export default index
 
-//**********************************/
-//***                              */
-//***      *************************/
-//***      *************************/
-//***      *************************/
-//***                              */
-//**********************************/
+//********* COMPONENTS **************//
 const IndexPage = () => {
   let props = {
     visible: "true",
