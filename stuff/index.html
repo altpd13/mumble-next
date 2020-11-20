@@ -26,7 +26,7 @@
     </div>
     <div id="container" style="display: none" data-bind="visible: true,
                                                          css: { minimal: minimalView }">
-      <!-- ko with: connectDialog --> 
+      <!-- ko with: connectDialog -->
       <div class="connect-dialog dialog" data-bind="visible: visible() && !joinOnly()">
           <div id="connect-dialog_title" class="dialog-header">
             Connect to Server
@@ -542,7 +542,7 @@
       </div>
       <script type="text/html" id="channel">
         <div class="channel" data-bind="
-            click: $root.select, 
+            click: $root.select,
             event: {
               contextmenu: openContextMenu,
               dblclick: $root.requestMove.bind($root, $root.thisUser())
@@ -591,7 +591,7 @@
                   alt="server mute" src="/svg/muted_server.svg">
               <img class="user-suppress-mute" data-bind="visible: suppress"
                   alt="suppressed" src="/svg/muted_suppressed.svg">
-              <img class="user-self-mute" data-bind="visible: selfMute" 
+              <img class="user-self-mute" data-bind="visible: selfMute"
                   alt="self mute" src="/svg/muted_self.svg">
               <img class="user-server-deaf" data-bind="visible: deaf"
                   alt="server deaf" src="/svg/deafened_server.svg">
