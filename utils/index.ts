@@ -9,41 +9,41 @@ const url = require('url')
 const MumbleClient = require('mumble-client')
 const BufferQueueNode = require('web-audio-buffer-queue')
 const audioContext = require('audio-context')
-const keyboardjs = require('keyboardjs')
+// const keyboardjs = require('keyboardjs')
 
-interface mumbleWebConfig {
-  'connectDialog': {
-    'address': boolean,
-    'port': boolean,
-    'token': boolean,
-    'username': boolean,
-    'password': boolean,
-    'channelName': boolean
-  },
-  'settings': {
-    'voiceMode': string,
-    'pttKey': string,
-    'vadLevel': number,
-    'toolbarVertical': boolean,
-    'showAvatars': string,
-    'userCountInChannelName': boolean,
-    'audioBitrate': number, // bits per second
-    'samplesPerPacket': number
-  },
-  'defaults': {
-    // Connect Dialog
-    'address': string,
-    'port': number,
-    'token': string,
-    'username': string,
-    'password': string,
-    'joinDialog': boolean, // replace whole dialog with single "Join Conference" button
-    'matrix': boolean, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
-    'avatarurl': string, // download and set the user's Mumble avatar to the image at self URL
-    // General
-    'theme': string
-  }
-}
+// interface mumbleWebConfig {
+//   'connectDialog': {
+//     'address': boolean,
+//     'port': boolean,
+//     'token': boolean,
+//     'username': boolean,
+//     'password': boolean,
+//     'channelName': boolean
+//   },
+//   'settings': {
+//     'voiceMode': string,
+//     'pttKey': string,
+//     'vadLevel': number,
+//     'toolbarVertical': boolean,
+//     'showAvatars': string,
+//     'userCountInChannelName': boolean,
+//     'audioBitrate': number, // bits per second
+//     'samplesPerPacket': number
+//   },
+//   'defaults': {
+//     // Connect Dialog
+//     'address': string,
+//     'port': number,
+//     'token': string,
+//     'username': string,
+//     'password': string,
+//     'joinDialog': boolean, // replace whole dialog with single "Join Conference" button
+//     'matrix': boolean, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
+//     'avatarUrl': string, // download and set the user's Mumble avatar to the image at self URL
+//     // General
+//     'theme': string
+//   }
+// }
 
 function openContextMenu(event: any, contextMenu: any, target: any) {
   contextMenu.posX = event.clientX
@@ -92,7 +92,7 @@ export default class GlobalBindings {
   voiceHandler: VoiceHandler;
 
 
-  constructor(config: mumbleWebConfig) {
+  constructor(config: any) {
     this.config = config
     this.settings = new Settings({defaults: config.settings})
     this.connector = new WorkerBasedMumbleConnector()
@@ -783,7 +783,7 @@ export class ConnectDialog {
 
   connect() {
     this.hide()
-    ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
+    // ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
 
   addToken() {
@@ -963,25 +963,25 @@ export class SettingsDialog {
     // testVoiceHandler = null
   }
 
-  recordPttKey() {
-    let combo: string[] = []
-    const keydown = (e: any) => {
-      combo = e.pressedKeys
-      let comboStr = combo.join(' + ')
-      this.pttKeyDisplay('> ' + comboStr + ' <')
-    }
-    const keyup = () => {
-      keyboardjs.unbind('', keydown, keyup)
-      let comboStr = combo.join(' + ')
-      if (comboStr) {
-        this.pttKey(comboStr).pttKeyDisplay(comboStr)
-      } else {
-        this.pttKeyDisplay(this.pttKey())
-      }
-    }
-    keyboardjs.bind('', keydown, keyup)
-    this.pttKeyDisplay('> ? <')
-  }
+  // recordPttKey() {
+  //   let combo: string[] = []
+  //   const keydown = (e: any) => {
+  //     combo = e.pressedKeys
+  //     let comboStr = combo.join(' + ')
+  //     this.pttKeyDisplay('> ' + comboStr + ' <')
+  //   }
+  //   const keyup = () => {
+  //     keyboardjs.unbind('', keydown, keyup)
+  //     let comboStr = combo.join(' + ')
+  //     if (comboStr) {
+  //       this.pttKey(comboStr).pttKeyDisplay(comboStr)
+  //     } else {
+  //       this.pttKeyDisplay(this.pttKey())
+  //     }
+  //   }
+  //   keyboardjs.bind('', keydown, keyup)
+  //   this.pttKeyDisplay('> ? <')
+  // }
 
   totalBandwidth() {
     return MumbleClient.calcEnforcableBandwidth(

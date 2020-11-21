@@ -2,7 +2,7 @@ import { Writable } from 'stream'
 import MicrophoneStream from 'microphone-stream'
 import audioContext from 'audio-context'
 import getUserMedia from 'getusermedia'
-import keyboardjs from 'keyboardjs'
+// import keyboardjs from 'keyboardjs'
 import vad from 'voice-activity-detection'
 import DropStream from 'drop-stream'
 
@@ -33,7 +33,7 @@ export class VoiceHandler extends Writable {
         return this._outbound
       }
 
-      // Note: the samplesPerPacket argument is handled in worker.js and not passed on
+      // Note: the samplesPerPacket argument is handled in worker.ts and not passed on
       this._outbound = this._client.createVoiceStream(this._settings.samplesPerPacket)
 
       this.emit('started_talking')

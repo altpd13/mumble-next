@@ -1,65 +1,11 @@
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
-import React, { useState } from 'react'
+import React from 'react'
 import GlobalBindings from "../utils/index";
+import MatrixWidget from  "../utils/MatrixWidget"
 
 
 
-class MatrixWidget {
-  widgetId: null
-  constructor() {
-    this.widgetId = null
-    window.addEventListener('message', this.onMessage.bind(this))
-  }
-
-  onMessage(event: any) {
-    this.widgetId = this.widgetId || event.data.widgetId
-
-    switch (event.data.api) {
-      case 'fromWidget':
-        break
-      case 'toWidget':
-        switch (event.data.action) {
-          case 'capabilities':
-            this.sendResponse(event, {
-              capabilities: ['m.always_on_screen']
-            })
-            break
-        }
-        break
-      default:
-        break
-    }
-  }
-
-  sendContentLoaded() {
-    this.sendMessage({
-      action: 'content_loaded'
-    })
-  }
-
-  setAlwaysOnScreen(value: any) {
-    // Extension of main spec, see https://github.com/matrix-org/matrix-doc/issues/1354
-    this.sendMessage({
-      action: 'set_always_on_screen',
-      value: value, // once for spec compliance
-      data: { value: value } // and once for Riot
-    })
-  }
-
-  sendMessage(message: any) {
-    if (!this.widgetId) return
-    message.api = message.api || 'fromWidget'
-    message.widgetId = message.widgetId || this.widgetId
-    message.requestId = message.requestId || Math.random().toString(36)
-    window.parent.postMessage(message, '*')
-  }
-
-  sendResponse(event: any, response: any) {
-    event.data.response = response
-    event.source.postMessage(event.data, event.origin)
-  }
-}
 //************ INDEX ****************/
 declare global {
   interface Window {
@@ -70,6 +16,7 @@ declare global {
 }
 
 class index extends React.Component {
+
   componentDidMount() {
     window.matrixWidget = new MatrixWidget()
     window.mumbleWebConfig = {
@@ -110,7 +57,7 @@ class index extends React.Component {
       }
     }//config.js
     const ui = new GlobalBindings(window.mumbleWebConfig);
-    window.mumbleUi = ui
+    // window.mumbleUi = ui
   }
 
   render() {
@@ -256,7 +203,7 @@ class ConnectBoxDialog extends React.Component<any, any> {
               </tr>
               <tr data-bind="if: $root.config.connectDialog.token, visible: tokens().length > 0">
                 <td></td>
-                <td><select id="token" /**!multiple='true'*/ height="5" data-bind="options:tokens, selectedOptions:selectedTokens"></select></td>
+                <td><select id="token" /**!multiple='true'*/ /**height="5"*/ data-bind="options:tokens, selectedOptions:selectedTokens"></select></td>
               </tr>
               <tr data-bind="if: $root.config.connectDialog.channelName">
                 <td>Channel</td>

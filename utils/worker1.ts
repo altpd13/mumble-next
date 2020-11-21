@@ -1,18 +1,27 @@
 import { Transform } from 'stream'
-import mumbleConnect from 'mumble-client-websocket'
-import toArrayBuffer from 'to-arraybuffer'
-import chunker from 'stream-chunker'
-import Resampler from 'libsamplerate.js'
-import CodecsBrowser from 'mumble-client-codecs-browser'
 
+const mumbleConnect = require('mumble-client-websocket')
+const toArrayBuffer = require('to-arraybuffer')
+const chunker = require('stream-chunker')
+const Resampler = require('libsamplerate.js')
+const CodecBrowser = require('mumble-client-codecs-browser')
 
-  let sampleRate
-  let nextClientId = 1
-  let nextVoiceId = 1
-  let voiceStreams = []
-  let clients = []
+export class Worker {
+  sampleRate:number
+  nextClientId:number
+  nextVoiceId:number
+  voiceStreams: any[]
+  clients: any[]
+  constructor() {
+    this.sampleRate = 48000
+    this.nextClientId = 1
+    this.nextVoiceId = 1
+    this.voiceStreams = []
+    this.clients = []
 
-  function postMessage (msg, transfer) {
+  }
+
+  postMessage (msg:any, transfer:any = null) {
     try {
       self.postMessage(msg, transfer)
     } catch (err) {
@@ -21,14 +30,14 @@ import CodecsBrowser from 'mumble-client-codecs-browser'
     }
   }
 
-  function resolve (reqId, value, transfer) {
+  resolve (reqId:any, value:any, transfer:any = null) {
     postMessage({
       reqId: reqId,
       result: value
     }, transfer)
   }
 
-  function reject (reqId, value, transfer) {
+  reject (reqId:any, value:any, transfer:any = null) {
     console.error(value)
     let jsonValue = JSON.parse(JSON.stringify(value))
     if (value.$type) {
@@ -40,34 +49,34 @@ import CodecsBrowser from 'mumble-client-codecs-browser'
     }, transfer)
   }
 
-  function registerEventProxy (id, obj, event, transform) {
-    obj.on(event, function (_) {
+  registerEventProxy (id:any, obj:any, event:any, transform: any = null) {
+    obj.on(event, function (_: any) {
       postMessage({
         clientId: id.client,
         channelId: id.channel,
         userId: id.user,
         event: event,
         value: transform ? transform.apply(null, arguments) : Array.from(arguments)
-      })
+      }, _)
     })
   }
 
-  function pushProp (id, obj, prop, transform) {
+  pushProp (id:any, obj:any, prop:any, transform:any = null) {
     let value = obj[prop]
-    postMessage({
+    this.postMessage({
       clientId: id.client,
       channelId: id.channel,
       userId: id.user,
       prop: prop,
       value: transform ? transform(value) : value
-    })
+    },null)
   }
 
-  function setupOutboundVoice (voiceId, samplesPerPacket, stream) {
+  setupOutboundVoice (voiceId:any, samplesPerPacket:any, stream:any) {
     let resampler = new Resampler({
       unsafe: true,
       type: Resampler.Type.SINC_FASTEST,
-      ratio: 48000 / sampleRate
+      ratio: 48000 / this.sampleRate
     })
 
     let buffer2Float32Array = new Transform({
@@ -82,43 +91,43 @@ import CodecsBrowser from 'mumble-client-codecs-browser'
       .pipe(buffer2Float32Array)
       .pipe(stream)
 
-    voiceStreams[voiceId] = resampler
+    this.voiceStreams[voiceId] = resampler
   }
 
-  function setupChannel (id, channel) {
+  setupChannel (id: any, channel:any) {
     id = Object.assign({}, id, { channel: channel.id })
 
-    registerEventProxy(id, channel, 'update', (props) => {
+    this.registerEventProxy(id, channel, 'update', (props: any) => {
       if (props.parent) {
         props.parent = props.parent.id
       }
       if (props.links) {
-        props.links = props.links.map((it) => it.id)
+        props.links = props.links.map((it:any) => it.id)
       }
       return [props]
     })
-    registerEventProxy(id, channel, 'remove')
+    this.registerEventProxy(id, channel, 'remove')
 
-    pushProp(id, channel, 'parent', (it) => it ? it.id : it)
-    pushProp(id, channel, 'links', (it) => it.map((it) => it.id))
+    this.pushProp(id, channel, 'parent', (it:any) => it ? it.id : it)
+    this.pushProp(id, channel, 'links', (it:any) => it.map((it:any) => it.id))
     let props = [
       'position', 'name', 'description'
     ]
     for (let prop of props) {
-      pushProp(id, channel, prop)
+      this.pushProp(id, channel, prop)
     }
 
     for (let child of channel.children) {
-      setupChannel(id, child)
+      this.setupChannel(id, child)
     }
 
     return channel.id
   }
 
-  function setupUser (id, user) {
+  setupUser (id: any, user:any) {
     id = Object.assign({}, id, { user: user.id })
 
-    registerEventProxy(id, user, 'update', (actor, props) => {
+    this.registerEventProxy(id, user, 'update', (actor:any, props:any) => {
       if (actor) {
         actor = actor.id
       }
@@ -127,20 +136,20 @@ import CodecsBrowser from 'mumble-client-codecs-browser'
       }
       return [actor, props]
     })
-    registerEventProxy(id, user, 'voice', (stream) => {
-      let voiceId = nextVoiceId++
+    this.registerEventProxy(id, user, 'voice', (stream:any) => {
+      let voiceId = this.nextVoiceId++
 
-      let target
+      let target: any
 
       // We want to do as little on the UI thread as possible, so do resampling here as well
       var resampler = new Resampler({
         unsafe: true,
         type: Resampler.Type.ZERO_ORDER_HOLD,
-        ratio: sampleRate / 48000
+        ratio: this.sampleRate / 48000
       })
 
       // Pipe stream into resampler
-      stream.on('data', (data) => {
+      stream.on('data', (data:any) => {
         // store target so we can pass it on after resampling
         target = data.target
         resampler.write(Buffer.from(data.pcm.buffer))
@@ -149,85 +158,85 @@ import CodecsBrowser from 'mumble-client-codecs-browser'
       })
 
       // Pipe resampler into output stream on UI thread
-      resampler.on('data', (data) => {
+      resampler.on('data', (data:any) => {
         data = toArrayBuffer(data) // postMessage can't transfer node's Buffer
-        postMessage({
+        this.postMessage({
           voiceId: voiceId,
           target: target,
           buffer: data
         }, [data])
       }).on('end', () => {
-        postMessage({
+        this.postMessage({
           voiceId: voiceId
         })
       })
 
       return [voiceId]
     })
-    registerEventProxy(id, user, 'remove')
+    this.registerEventProxy(id, user, 'remove')
 
-    pushProp(id, user, 'channel', (it) => it ? it.id : it)
+    this.pushProp(id, user, 'channel', (it:any) => it ? it.id : it)
     let props = [
       'uniqueId', 'username', 'mute', 'deaf', 'suppress', 'selfMute', 'selfDeaf',
       'texture', 'textureHash', 'comment'
     ]
     for (let prop of props) {
-      pushProp(id, user, prop)
+      this.pushProp(id, user, prop)
     }
 
     return user.id
   }
 
-  function setupClient (id, client) {
+  setupClient (id:any, client:any) {
     id = { client: id }
 
-    registerEventProxy(id, client, 'error')
-    registerEventProxy(id, client, 'denied', it => [it])
-    registerEventProxy(id, client, 'newChannel', (it) => [setupChannel(id, it)])
-    registerEventProxy(id, client, 'newUser', (it) => [setupUser(id, it)])
-    registerEventProxy(id, client, 'message', (sender, message, users, channels, trees) => {
+    this.registerEventProxy(id, client, 'error')
+    this.registerEventProxy(id, client, 'denied', (it:any) => [it])
+    this.registerEventProxy(id, client, 'newChannel', (it:any) => [this.setupChannel(id, it)])
+    this.registerEventProxy(id, client, 'newUser', (it:any) => [this.setupUser(id, it)])
+    this.registerEventProxy(id, client, 'message', (sender:any, message:any, users:any, channels:any, trees:any) => {
       return [
         sender.id,
         message,
-        users.map((it) => it.id),
-        channels.map((it) => it.id),
-        trees.map((it) => it.id)
+        users.map((it:any) => it.id),
+        channels.map((it:any) => it.id),
+        trees.map((it:any) => it.id)
       ]
     })
     client.on('dataPing', () => {
-      pushProp(id, client, 'dataStats')
+      this.pushProp(id, client, 'dataStats')
     })
 
-    setupChannel(id, client.root)
+    this.setupChannel(id, client.root)
     for (let user of client.users) {
-      setupUser(id, user)
+      this.setupUser(id, user)
     }
 
-    pushProp(id, client, 'root', (it) => it.id)
-    pushProp(id, client, 'self', (it) => it.id)
-    pushProp(id, client, 'welcomeMessage')
-    pushProp(id, client, 'serverVersion')
-    pushProp(id, client, 'maxBandwidth')
+    this.pushProp(id, client, 'root', (it:any) => it.id)
+    this.pushProp(id, client, 'self', (it:any) => it.id)
+    this.pushProp(id, client, 'welcomeMessage')
+    this.pushProp(id, client, 'serverVersion')
+    this.pushProp(id, client, 'maxBandwidth')
   }
 
-  function onMessage (data) {
+  onMessage (data:any) {
     let { reqId, method, payload } = data
     if (method === '_init') {
-      sampleRate = data.sampleRate
+      this.sampleRate = data.sampleRate
     } else if (method === '_connect') {
-      payload.args.codecs = CodecsBrowser
-      mumbleConnect(payload.host, payload.args).then((client) => {
-        let id = nextClientId++
-        clients[id] = client
-        setupClient(id, client)
+      payload.args.codecs = CodecBrowser
+      mumbleConnect(payload.host, payload.args).then((client:any) => {
+        let id = this.nextClientId++
+        this.clients[id] = client
+        this.setupClient(id, client)
         return id
-      }).done((id) => {
-        resolve(reqId, id)
-      }, (err) => {
-        reject(reqId, err)
+      }).done((id:any) => {
+        this.resolve(reqId, id)
+      }, (err:any) => {
+        this.reject(reqId, err)
       })
     } else if (data.clientId != null) {
-      let client = clients[data.clientId]
+      let client = this.clients[data.clientId]
 
       let target
       if (data.userId != null) {
@@ -245,33 +254,33 @@ import CodecsBrowser from 'mumble-client-codecs-browser'
 
           let stream = target.createVoiceStream.apply(target, payload)
 
-          setupOutboundVoice(voiceId, samplesPerPacket, stream)
+          this.setupOutboundVoice(voiceId, samplesPerPacket, stream)
           return
         }
         if (method === 'disconnect') {
-          delete clients[data.clientId]
+          delete this.clients[data.clientId]
         }
       }
 
       target[method].apply(target, payload)
     } else if (data.voiceId != null) {
-      let stream = voiceStreams[data.voiceId]
+      let stream = this.voiceStreams[data.voiceId]
       let buffer = data.chunk
       if (buffer) {
         stream.write(Buffer.from(buffer))
       } else {
-        delete voiceStreams[data.voiceId]
+        delete this.voiceStreams[data.voiceId]
         stream.end()
       }
     }
   }
+}
 
-  self.addEventListener('message', (ev) => {
-    try {
-      onMessage(ev.data)
-    } catch (ex) {
-      console.error('exception during message event', ev.data, ex)
-    }
-  })
-
-  export default null
+self.addEventListener('message', (ev:any) => {
+  try {
+    const w = new Worker()
+    w.onMessage(ev.data)
+  } catch (ex) {
+    console.error('exception during message event', ev.data, ex)
+  }
+})
