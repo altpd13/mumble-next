@@ -57,7 +57,7 @@ class index extends React.Component {
       }
     }//config.js
     const ui = new GlobalBindings(window.mumbleWebConfig);
-    // window.mumbleUi = ui
+    window.mumbleUi = ui
   }
 
   render() {

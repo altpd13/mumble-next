@@ -715,7 +715,6 @@ export class Settings {
     function load(key: string) {
       return window.localStorage.getItem('mumble.' + key);
     }
-
     this.voiceMode = load('voiceMode') || defaults.voiceMode
     this.pttKey = load('pttKey') || defaults.pttKey
     this.vadLevel = load('vadLevel') || defaults.vadLevel
@@ -777,8 +776,8 @@ export class ConnectDialog {
     this.channelName = ""
     this.joinOnly = false
     this.visible = true
-    this.show = this.visible.bind(this.visible, true)
-    this.hide = this.visible.bind(this.visible, false)
+    this.show = this.visible = true
+    this.hide = this.visible = false
   }
 
   connect() {
@@ -817,8 +816,8 @@ export class ConnectErrorDialog {
     this.password = connectDialog.password
     this.joinOnly = connectDialog.joinOnly
     this.visible = false
-    this.show = this.visible.bind(this.visible, true)
-    this.hide = this.visible.bind(this.visible, false)
+    this.show = this.visible = true
+    this.hide = this.visible = false
   }
 
 }
@@ -921,8 +920,8 @@ export class SettingsDialog {
     this.vadLevel = settings.vadLevel
     this.testVadLevel = 0
     this.testVadActive = false
-    this.showAvatars = settings.showAvatars()
-    this.userCountInChannelName = settings.userCountInChannelName()
+    this.showAvatars = settings.showAvatars
+    this.userCountInChannelName = settings.userCountInChannelName
     // Need to wrap self in a pureComputed to make sure it's always numeric
     this.audioBitrate = settings.audioBitrate
     this.samplesPerPacket = settings.samplesPerPacket
