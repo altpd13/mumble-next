@@ -8,14 +8,15 @@ module.exports = module.exports = withWorkers(
     /*sassOptions: {
       includePaths: [path.join(__dirname, 'styles')],
     },*/
-  workerLoaderOptions: { inline: true },
-  webpack(config, {isServer}) {
-    // if (!isServer) {
-    //   config.node = {
-    //     fs: 'empty'
-    //   }
-    // }
-    return config
-  }
+  // workerLoaderOptions: { inline: true },
+  // webpack(config, {isServer}) {
+  //   config.resolve = {
+  //     alias: {
+  //       'webworkify$': 'webworkify-webpack'
+  //     },
+  //     ...config.resolve
+  //   }
+  //   return config
+  // }
 })
 )

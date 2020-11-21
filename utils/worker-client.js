@@ -4,7 +4,6 @@ import EventEmitter from 'events'
 import {Writable, PassThrough} from 'stream'
 import toArrayBuffer from 'to-arraybuffer'
 import ByteBuffer from 'bytebuffer'
-import worker from './my.worker'
 import webWorkify from 'webworkify'
 
 /**
@@ -13,7 +12,7 @@ import webWorkify from 'webworkify'
  */
 export default class WorkerBasedMumbleConnector {
   constructor() {
-    this._worker = webWorkify(worker)
+    this._worker = webWorkify(require('./worker.js'))
     this._worker.addEventListener('message', this._onMessage.bind(this))
     this._reqId = 1
     this._requests = {}
