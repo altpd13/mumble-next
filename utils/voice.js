@@ -6,6 +6,7 @@ import getUserMedia from 'getusermedia'
 import vad from 'voice-activity-detection'
 import DropStream from 'drop-stream'
 
+
 export class VoiceHandler extends Writable {
   constructor (client, settings) {
     super({ objectMode: true })
@@ -21,7 +22,7 @@ export class VoiceHandler extends Writable {
       this._stopOutbound()
     }
   }
-
+  audioContext
   _getOrCreateOutbound () {
     if (this._mute) {
       throw new Error('tried to send audio while self-muted')

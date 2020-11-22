@@ -3,13 +3,50 @@ import WorkerBasedMumbleConnector from './worker-client'
 import {ContinuousVoiceHandler, PushToTalkVoiceHandler, VADVoiceHandler, VoiceHandler} from './voice'
 import {filterArray} from "./filterArray";
 
-
 const url = require('url')
 // const ByteBuffer = require('bytebuffer')
 const MumbleClient = require('mumble-client')
 const BufferQueueNode = require('web-audio-buffer-queue')
 const audioContext = require('audio-context')
 // const keyboardjs = require('keyboardjs')
+
+// const mumbleWebConfig = {
+//   // Which fields to show on the Connect to Server dialog
+//   'connectDialog': {
+//     'address': true,
+//     'port': true,
+//     'token': true,
+//     'username': true,
+//     'password': true,
+//     'channelName': false
+//   },
+//   // Default values for user settings
+//   // You can see your current value by typing `localStorage.getItem('mumble.$setting')` in the web console.
+//   'settings': {
+//     'voiceMode': 'vad', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
+//     'pttKey': 'ctrl + shift',
+//     'vadLevel': 0.3,
+//     'toolbarVertical': false,
+//     'showAvatars': 'always', // one of 'always', 'own_channel', 'linked_channel', 'minimal_only', 'never'
+//     'userCountInChannelName': false,
+//     'audioBitrate': 40000, // bits per second
+//     'samplesPerPacket': 960
+//   },
+//   // Default values (can be changed by passing a query parameter of the same name)
+//   'defaults': {
+//     // Connect Dialog
+//     'address': window.location.hostname,
+//     'port': '443',
+//     'token': '',
+//     'username': '',
+//     'password': '',
+//     'joinDialog': false, // replace whole dialog with single "Join Conference" button
+//     'matrix': false, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
+//     'avatarurl': '', // download and set the user's Mumble avatar to the image at this URL
+//     // General
+//     'theme': 'MetroMumbleLight'
+//   }
+// }
 
 // interface mumbleWebConfig {
 //   'connectDialog': {
@@ -64,6 +101,313 @@ function openContextMenu(event: any, contextMenu: any, target: any) {
   event.preventDefault()
 }
 
+export class Settings {
+  voiceMode: string;
+  pttKey: string;
+  vadLevel: number;
+  toolbarVertical: Boolean;
+  showAvatars: string;
+  userCountInChannelName: Boolean;
+  audioBitrate: number;
+  samplesPerPacket: number;
+
+  constructor(defaults: any) {
+    function load(key: string) {
+      return window.localStorage.getItem('mumble.' + key);
+    }
+
+    this.voiceMode = load('voiceMode') || defaults.voiceMode
+    this.pttKey = load('pttKey') || defaults.pttKey
+    this.vadLevel = load('vadLevel') || defaults.vadLevel
+    this.toolbarVertical = load('toolbarVertical') || defaults.toolbarVertical
+    this.showAvatars = load('showAvatars') || defaults.showAvatars
+    this.userCountInChannelName = load('userCountInChannelName') || defaults.userCountInChannelName
+    this.audioBitrate = Number(load('audioBitrate')) || defaults.audioBitrate
+    this.samplesPerPacket = Number(load('samplesPerPacket')) || defaults.samplesPerPacket
+  }
+
+  save() {
+    const save = (key: string, val: any) => window.localStorage.setItem('mumble.' + key, val)
+    save('voiceMode', this.voiceMode)
+    save('pttKey', this.pttKey)
+    save('vadLevel', this.vadLevel)
+    save('toolbarVertical', this.toolbarVertical)
+    save('showAvatars', this.showAvatars)
+    save('userCountInChannelName', this.userCountInChannelName)
+    save('audioBitrate', this.audioBitrate)
+    save('samplesPerPacket', this.samplesPerPacket)
+  }
+}
+
+export class ContextMenu {
+  posX: number;
+  posY: number;
+  target: any;
+
+  constructor(posX: number, posY: number, target: any) {
+    this.posX = posX
+    this.posY = posY
+    this.target = target
+  }
+
+}
+
+export class ConnectDialog {
+  address: string;
+  port: string;
+  tokenToAdd: string;
+  selectedTokens: string[];
+  tokens: string[];
+  username: string;
+  password: string;
+  channelName: string;
+  joinOnly: Boolean;
+  visible: any;
+  show: any;
+  hide: any;
+
+  constructor() {
+    this.address = ""
+    this.port = ""
+    this.tokenToAdd = ""
+    this.selectedTokens = []
+    this.tokens = []
+    this.username = ""
+    this.password = ""
+    this.channelName = ""
+    this.joinOnly = false
+    this.visible = true
+    this.show = this.visible = true
+    this.hide = this.visible = false
+  }
+
+  connect() {
+    this.hide()
+    // ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
+  }
+
+  addToken() {
+    if ((this.tokenToAdd != "") && (this.tokens.indexOf(this.tokenToAdd) < 0)) {
+      this.tokens.push(this.tokenToAdd)
+    }
+    this.tokenToAdd = ""
+  }
+
+  removeSelectedTokens() {
+    this.tokens = filterArray(this.tokens, this.selectedTokens)
+    this.selectedTokens = []
+  }
+
+}
+
+export class ConnectErrorDialog {
+  type: number;
+  reason: string;
+  username: string;
+  password: string;
+  joinOnly: Boolean;
+  visible: any;
+  show: any;
+  hide: any;
+
+  constructor(connectDialog: ConnectDialog) {
+    this.type = 0
+    this.reason = ""
+    this.username = connectDialog.username
+    this.password = connectDialog.password
+    this.joinOnly = connectDialog.joinOnly
+    this.visible = false
+    this.show = this.visible = true
+    this.hide = this.visible = false
+  }
+
+}
+
+export class ConnectionInfo {
+  _ui: GlobalBindings;
+  visible: Boolean;
+  serverVersion: string;
+  latencyMs: number;
+  latencyDeviation: number;
+  remoteHost: string;
+  remotePort: string;
+  maxBitrate: number;
+  currentBitrate: number;
+  maxBandwidth: number;
+  currentBandwidth: number;
+  codec: string;
+
+  constructor(ui: GlobalBindings) {
+    this._ui = ui
+    this.visible = false
+    this.serverVersion = ""
+    this.latencyMs = NaN
+    this.latencyDeviation = NaN
+    this.remoteHost = ""
+    this.remotePort = ""
+    this.maxBitrate = NaN
+    this.currentBitrate = NaN
+    this.maxBandwidth = NaN
+    this.currentBandwidth = NaN
+    this.codec = ""
+
+  }
+
+  show() {
+    this.update()
+    this.visible = true
+  }
+
+  hide() {
+    this.visible = false
+  }
+
+  update() {
+    let client = this._ui.client
+
+    this.serverVersion = client.serverVersion
+
+    let dataStats = client.dataStats
+    if (dataStats) {
+      this.latencyMs = dataStats.mean
+      this.latencyDeviation = Math.sqrt(dataStats.variance)
+    }
+    this.remoteHost = this._ui.remoteHost
+    this.remotePort = this._ui.remotePort
+
+    let spp = this._ui.settings.samplesPerPacket
+    let maxBitrate = client.getMaxBitrate(spp, false)
+    let maxBandwidth = client.maxBandwidth
+    let actualBitrate = client.getActualBitrate(spp, false)
+    let actualBandwidth = MumbleClient.calcEnforcableBandwidth(actualBitrate, spp, false)
+    this.maxBitrate = maxBitrate
+    this.currentBitrate = actualBitrate
+    this.maxBandwidth = maxBandwidth
+    this.currentBandwidth = actualBandwidth
+    this.codec = 'Opus' // only one supported for sending
+  }
+}
+
+export class CommentDialog {
+  visible: Boolean;
+
+  constructor() {
+    this.visible = false
+  }
+
+  show() {
+    this.visible = true
+  }
+}
+
+export class SettingsDialog {
+  voiceMode: any;
+  pttKey: any;
+  pttKeyDisplay: any;
+  vadLevel: any;
+  testVadLevel: number;
+  testVadActive: boolean;
+  showAvatars: any;
+  userCountInChannelName: any;
+  audioBitrate: number;
+  samplesPerPacket: any;
+  // msPerPacket: PureComputed<number>;
+  _testVad: VADVoiceHandler;
+
+  constructor(settings: any) {
+    this._testVad = new VADVoiceHandler(null,new Settings(<any>{}))
+    this.voiceMode = settings.voiceMode
+    this.pttKey = settings.pttKey
+    this.pttKeyDisplay = settings.pttKey
+    this.vadLevel = settings.vadLevel
+    this.testVadLevel = 0
+    this.testVadActive = false
+    this.showAvatars = settings.showAvatars
+    this.userCountInChannelName = settings.userCountInChannelName
+    // Need to wrap self in a pureComputed to make sure it's always numeric
+    this.audioBitrate = settings.audioBitrate
+    this.samplesPerPacket = settings.samplesPerPacket
+    // this.msPerPacket = ko.pureComputed({
+    //   read: () => this.samplesPerPacket() / 48,
+    //   write: (value) => this.samplesPerPacket = value * 48
+    // })//msperPacket ㅇㅣ 바뀌면 samplePerPacket 도 바뀜 ㅋㅋ 루삥뽕
+
+    this._setupTestVad()
+    this.vadLevel.subscribe(() => this._setupTestVad())
+  }
+
+  _setupTestVad() {
+    if (this._testVad) {
+      this._testVad.end()
+    }
+    let dummySettings = new Settings(<any>{})
+    this.applyTo(dummySettings)
+    this._testVad = new VADVoiceHandler(null, dummySettings)
+    this._testVad.on('started_talking', () => this.testVadActive = true)
+      .on('stopped_talking', () => this.testVadActive = false)
+      .on('level', (level: number) => this.testVadLevel = level)
+  }
+
+  applyTo(settings: Settings) {
+    settings.voiceMode = this.voiceMode
+    settings.pttKey = this.pttKey
+    settings.vadLevel = this.vadLevel
+    settings.showAvatars = this.showAvatars
+    settings.userCountInChannelName = this.userCountInChannelName
+    settings.audioBitrate = this.audioBitrate
+    settings.samplesPerPacket = this.samplesPerPacket
+  }
+
+  end() {
+    this._testVad.end()
+    // testVoiceHandler = null
+  }
+
+  // recordPttKey() {
+  //   let combo: string[] = []
+  //   const keydown = (e: any) => {
+  //     combo = e.pressedKeys
+  //     let comboStr = combo.join(' + ')
+  //     this.pttKeyDisplay('> ' + comboStr + ' <')
+  //   }
+  //   const keyup = () => {
+  //     keyboardjs.unbind('', keydown, keyup)
+  //     let comboStr = combo.join(' + ')
+  //     if (comboStr) {
+  //       this.pttKey(comboStr).pttKeyDisplay(comboStr)
+  //     } else {
+  //       this.pttKeyDisplay(this.pttKey())
+  //     }
+  //   }
+  //   keyboardjs.bind('', keydown, keyup)
+  //   this.pttKeyDisplay('> ? <')
+  // }
+
+  totalBandwidth() {
+    return MumbleClient.calcEnforcableBandwidth(
+      this.audioBitrate,
+      this.samplesPerPacket(),
+      true
+    )
+  }
+
+  positionBandwidth() {
+    return this.totalBandwidth() - MumbleClient.calcEnforcableBandwidth(
+      this.audioBitrate,
+      this.samplesPerPacket(),
+      false
+    )
+  }
+
+  overheadBandwidth() {
+    return MumbleClient.calcEnforcableBandwidth(
+      0,
+      this.samplesPerPacket(),
+      false
+    )
+  }
+}
+
 
 export default class GlobalBindings {
   config: any;
@@ -90,11 +434,12 @@ export default class GlobalBindings {
   selfDeaf: boolean;
   selfMute: boolean;
   voiceHandler: VoiceHandler;
+  thisUser: any;
 
 
   constructor(config: any) {
     this.config = config
-    this.settings = new Settings({defaults: config.settings})
+    this.settings = new Settings(config.settings)
     this.connector = new WorkerBasedMumbleConnector()
     this.client = null
     this.userContextMenu = new ContextMenu(0, 0, null)
@@ -156,7 +501,7 @@ export default class GlobalBindings {
     this.remoteHost = host
     this.remotePort = port
 
-    // log(translate('logentry.connecting'), host)
+    log(['logentry.connecting', host])
 
     // Note: self call needs to be delayed until the user has interacted with
     // the page in some way (which at self point they have), see: https://goo.gl/7K7WLu
@@ -699,314 +1044,6 @@ export default class GlobalBindings {
   }
 }
 
-// ui = new GlobalBindings(window.mumbleWebConfig);
-
-export class Settings {
-  voiceMode: string;
-  pttKey: string;
-  vadLevel: number;
-  toolbarVertical: Boolean;
-  showAvatars: string;
-  userCountInChannelName: Boolean;
-  audioBitrate: number;
-  samplesPerPacket: number;
-
-  constructor({defaults}: { defaults: any }) {
-    function load(key: string) {
-      return window.localStorage.getItem('mumble.' + key);
-    }
-    this.voiceMode = load('voiceMode') || defaults.voiceMode
-    this.pttKey = load('pttKey') || defaults.pttKey
-    this.vadLevel = load('vadLevel') || defaults.vadLevel
-    this.toolbarVertical = load('toolbarVertical') || defaults.toolbarVertical
-    this.showAvatars = load('showAvatars') || defaults.showAvatars
-    this.userCountInChannelName = load('userCountInChannelName') || defaults.userCountInChannelName
-    this.audioBitrate = Number(load('audioBitrate')) || defaults.audioBitrate
-    this.samplesPerPacket = Number(load('samplesPerPacket')) || defaults.samplesPerPacket
-  }
-
-  save() {
-    const save = (key: string, val: any) => window.localStorage.setItem('mumble.' + key, val)
-    save('voiceMode', this.voiceMode)
-    save('pttKey', this.pttKey)
-    save('vadLevel', this.vadLevel)
-    save('toolbarVertical', this.toolbarVertical)
-    save('showAvatars', this.showAvatars)
-    save('userCountInChannelName', this.userCountInChannelName)
-    save('audioBitrate', this.audioBitrate)
-    save('samplesPerPacket', this.samplesPerPacket)
-  }
-}
-
-export class ContextMenu {
-  posX: number;
-  posY: number;
-  target: any;
-
-  constructor(posX: number, posY: number, target: any) {
-    this.posX = posX
-    this.posY = posY
-    this.target = target
-  }
-
-}
-
-export class ConnectDialog {
-  address: string;
-  port: string;
-  tokenToAdd: string;
-  selectedTokens: string[];
-  tokens: string[];
-  username: string;
-  password: string;
-  channelName: string;
-  joinOnly: Boolean;
-  visible: any;
-  show: any;
-  hide: any;
-
-  constructor() {
-    this.address = ""
-    this.port = ""
-    this.tokenToAdd = ""
-    this.selectedTokens = []
-    this.tokens = []
-    this.username = ""
-    this.password = ""
-    this.channelName = ""
-    this.joinOnly = false
-    this.visible = true
-    this.show = this.visible = true
-    this.hide = this.visible = false
-  }
-
-  connect() {
-    this.hide()
-    // ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
-  }
-
-  addToken() {
-    if ((this.tokenToAdd != "") && (this.tokens.indexOf(this.tokenToAdd) < 0)) {
-      this.tokens.push(this.tokenToAdd)
-    }
-    this.tokenToAdd = ""
-  }
-
-  removeSelectedTokens() {
-    this.tokens = filterArray(this.tokens, this.selectedTokens)
-    this.selectedTokens = []
-  }
-
-}
-
-export class ConnectErrorDialog {
-  type: number;
-  reason: string;
-  username: string;
-  password: string;
-  joinOnly: Boolean;
-  visible: any;
-  show: any;
-  hide: any;
-
-  constructor(connectDialog: ConnectDialog) {
-    this.type = 0
-    this.reason = ""
-    this.username = connectDialog.username
-    this.password = connectDialog.password
-    this.joinOnly = connectDialog.joinOnly
-    this.visible = false
-    this.show = this.visible = true
-    this.hide = this.visible = false
-  }
-
-}
-
-export class ConnectionInfo {
-  _ui: GlobalBindings;
-  visible: Boolean;
-  serverVersion: string;
-  latencyMs: number;
-  latencyDeviation: number;
-  remoteHost: string;
-  remotePort: string;
-  maxBitrate: number;
-  currentBitrate: number;
-  maxBandwidth: number;
-  currentBandwidth: number;
-  codec: string;
-
-  constructor(ui: GlobalBindings) {
-    this._ui = ui
-    this.visible = false
-    this.serverVersion = ""
-    this.latencyMs = NaN
-    this.latencyDeviation = NaN
-    this.remoteHost = ""
-    this.remotePort = ""
-    this.maxBitrate = NaN
-    this.currentBitrate = NaN
-    this.maxBandwidth = NaN
-    this.currentBandwidth = NaN
-    this.codec = ""
-
-  }
-
-  show() {
-    this.update()
-    this.visible = true
-  }
-
-  hide() {
-    this.visible = false
-  }
-
-  update() {
-    let client = this._ui.client
-
-    this.serverVersion = client.serverVersion
-
-    let dataStats = client.dataStats
-    if (dataStats) {
-      this.latencyMs = dataStats.mean
-      this.latencyDeviation = Math.sqrt(dataStats.variance)
-    }
-    this.remoteHost = this._ui.remoteHost
-    this.remotePort = this._ui.remotePort
-
-    let spp = this._ui.settings.samplesPerPacket
-    let maxBitrate = client.getMaxBitrate(spp, false)
-    let maxBandwidth = client.maxBandwidth
-    let actualBitrate = client.getActualBitrate(spp, false)
-    let actualBandwidth = MumbleClient.calcEnforcableBandwidth(actualBitrate, spp, false)
-    this.maxBitrate = maxBitrate
-    this.currentBitrate = actualBitrate
-    this.maxBandwidth = maxBandwidth
-    this.currentBandwidth = actualBandwidth
-    this.codec = 'Opus' // only one supported for sending
-  }
-}
-
-export class CommentDialog {
-  visible: Boolean;
-
-  constructor() {
-    this.visible = false
-  }
-
-  show() {
-    this.visible = true
-  }
-}
-
-export class SettingsDialog {
-  voiceMode: any;
-  pttKey: any;
-  pttKeyDisplay: any;
-  vadLevel: any;
-  testVadLevel: number;
-  testVadActive: boolean;
-  showAvatars: any;
-  userCountInChannelName: any;
-  audioBitrate: number;
-  samplesPerPacket: any;
-  // msPerPacket: PureComputed<number>;
-  _testVad: any;
-
-  constructor(settings: any) {
-    this.voiceMode = settings.voiceMode
-    this.pttKey = settings.pttKey
-    this.pttKeyDisplay = settings.pttKey
-    this.vadLevel = settings.vadLevel
-    this.testVadLevel = 0
-    this.testVadActive = false
-    this.showAvatars = settings.showAvatars
-    this.userCountInChannelName = settings.userCountInChannelName
-    // Need to wrap self in a pureComputed to make sure it's always numeric
-    this.audioBitrate = settings.audioBitrate
-    this.samplesPerPacket = settings.samplesPerPacket
-    // this.msPerPacket = ko.pureComputed({
-    //   read: () => this.samplesPerPacket() / 48,
-    //   write: (value) => this.samplesPerPacket = value * 48
-    // })//msperPacket ㅇㅣ 바뀌면 samplePerPacket 도 바뀜 ㅋㅋ 루삥뽕
-
-    this._setupTestVad()
-    this.vadLevel.subscribe(() => this._setupTestVad())
-  }
-
-  _setupTestVad() {
-    if (this._testVad) {
-      this._testVad.end()
-    }
-    let dummySettings = new Settings(<any>{})
-    this.applyTo(dummySettings)
-    this._testVad = new VADVoiceHandler(null, dummySettings)
-    this._testVad.on('started_talking', () => this.testVadActive = true)
-      .on('stopped_talking', () => this.testVadActive = false)
-      .on('level', (level: number) => this.testVadLevel = level)
-    // testVoiceHandler = this._testVad
-  }
-
-  applyTo(settings: Settings) {
-    settings.voiceMode = this.voiceMode()
-    settings.pttKey = this.pttKey()
-    settings.vadLevel = this.vadLevel()
-    settings.showAvatars = this.showAvatars
-    settings.userCountInChannelName = this.userCountInChannelName()
-    settings.audioBitrate = this.audioBitrate
-    settings.samplesPerPacket = this.samplesPerPacket()
-  }
-
-  end() {
-    this._testVad.end()
-    // testVoiceHandler = null
-  }
-
-  // recordPttKey() {
-  //   let combo: string[] = []
-  //   const keydown = (e: any) => {
-  //     combo = e.pressedKeys
-  //     let comboStr = combo.join(' + ')
-  //     this.pttKeyDisplay('> ' + comboStr + ' <')
-  //   }
-  //   const keyup = () => {
-  //     keyboardjs.unbind('', keydown, keyup)
-  //     let comboStr = combo.join(' + ')
-  //     if (comboStr) {
-  //       this.pttKey(comboStr).pttKeyDisplay(comboStr)
-  //     } else {
-  //       this.pttKeyDisplay(this.pttKey())
-  //     }
-  //   }
-  //   keyboardjs.bind('', keydown, keyup)
-  //   this.pttKeyDisplay('> ? <')
-  // }
-
-  totalBandwidth() {
-    return MumbleClient.calcEnforcableBandwidth(
-      this.audioBitrate,
-      this.samplesPerPacket(),
-      true
-    )
-  }
-
-  positionBandwidth() {
-    return this.totalBandwidth() - MumbleClient.calcEnforcableBandwidth(
-      this.audioBitrate,
-      this.samplesPerPacket(),
-      false
-    )
-  }
-
-  overheadBandwidth() {
-    return MumbleClient.calcEnforcableBandwidth(
-      0,
-      this.samplesPerPacket(),
-      false
-    )
-  }
-}
-
 function sortChannels(c1: any, c2: any) {
   if (c1.position() === c2.position()) {
     return c1.name() === c2.name() ? 0 : c1.name() < c2.name() ? -1 : 1
@@ -1016,4 +1053,85 @@ function sortChannels(c1: any, c2: any) {
 
 function compareUsers(u1: any, u2: any) {
   return u1.name() === u2.name() ? 0 : u1.name() < u2.name() ? -1 : 1
+}
+
+export function initializeUI() {
+  let queryParams = url.parse(document.location.href, true).query
+  queryParams = Object.assign({}, window.mumbleWebConfig.defaults, queryParams)
+  let useJoinDialog = queryParams.joinDialog
+  if (queryParams.matrix) {
+    useJoinDialog = true
+  }
+  if (queryParams.address) {
+    window.mumbleUi.connectDialog.address = queryParams.address
+  } else {
+    useJoinDialog = false
+  }
+  if (queryParams.port) {
+    window.mumbleUi.connectDialog.port = queryParams.port
+  } else {
+    useJoinDialog = false
+  }
+  if (queryParams.token) {
+    let tokens = queryParams.token
+    if (!Array.isArray(tokens)) {
+      tokens = [tokens]
+    }
+    window.mumbleUi.connectDialog.tokens = tokens
+  }
+  if (queryParams.username) {
+    window.mumbleUi.connectDialog.username = queryParams.username
+  } else {
+    useJoinDialog = false
+  }
+  if (queryParams.password) {
+    window.mumbleUi.connectDialog.password = queryParams.password
+  }
+  if (queryParams.channelName) {
+    window.mumbleUi.connectDialog.channelName = queryParams.channelName
+  }
+  if (queryParams.avatarurl) {
+    // Download the avatar and upload it to the mumble server when connected
+    let url = queryParams.avatarurl
+    console.log('Fetching avatar from', url)
+    let req = new window.XMLHttpRequest()
+    req.open('GET', url, true)
+    req.responseType = 'arraybuffer'
+    req.onload = () => {
+      let upload = () => {
+        if (req.response) {
+          console.log('Uploading user avatar to server')
+          window.mumbleUi.client.setSelfTexture(req.response)
+        }
+      }
+      // On any future connections
+      window.mumbleUi.thisUser.subscribe((thisUser:any) => {
+        if (thisUser) {
+          upload()
+        }
+      })
+      // And the current one (if already connected)
+      if (window.mumbleUi.thisUser()) {
+        upload()
+      }
+    }
+    req.send()
+  }
+  window.mumbleUi.connectDialog.joinOnly = useJoinDialog
+
+  window.onresize = () => window.mumbleUi.updateSize()
+  window.mumbleUi.updateSize()
+}
+
+
+export function log (argList:string[]) {
+  console.log.apply(console, argList)
+  let args = []
+  for (let i = 0; i < argList.length; i++) {
+    args.push(argList[i])
+  }
+  window.mumbleUi.log.push({
+    type: 'generic',
+    value: args.join(' ')
+  })
 }
