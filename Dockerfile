@@ -1,15 +1,14 @@
 FROM node:14.15.1-alpine3.12
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
-    mkdir -p /home/appuser/.npm-global && \
-    npm config set prefix '~/.npm-global'
-
-ENV PATH=/home/appuser/.npm-global/bin:$PATH
-
-USER appuser
+WORKDIR /home/node
 
 COPY . .
 
-RUN npm install
+RUN chown -R node: /home/node
+
+USER node
+
+RUN npm install && \
+    npm rebuild node-sass
 
 ENTRYPOINT npm run dev
