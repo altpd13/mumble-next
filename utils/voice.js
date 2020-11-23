@@ -1,4 +1,4 @@
-import { Writable } from 'stream'
+import {Writable} from 'stream'
 import MicrophoneStream from 'microphone-stream'
 import audioContext from 'audio-context'
 import getUserMedia from 'getusermedia'
@@ -8,22 +8,22 @@ import DropStream from 'drop-stream'
 
 
 export class VoiceHandler extends Writable {
-  constructor (client, settings) {
-    super({ objectMode: true })
+  constructor(client, settings) {
+    super({objectMode: true})
     this._client = client
     this._settings = settings
     this._outbound = null
     this._mute = false
   }
 
-  setMute (mute) {
+  setMute(mute) {
     this._mute = mute
     if (mute) {
       this._stopOutbound()
     }
   }
-  audioContext
-  _getOrCreateOutbound () {
+
+  _getOrCreateOutbound() {
     if (this._mute) {
       throw new Error('tried to send audio while self-muted')
     }
@@ -42,7 +42,7 @@ export class VoiceHandler extends Writable {
     return this._outbound
   }
 
-  _stopOutbound () {
+  _stopOutbound() {
     if (this._outbound) {
       this.emit('stopped_talking')
       this._outbound.end()
@@ -50,18 +50,18 @@ export class VoiceHandler extends Writable {
     }
   }
 
-  _final (callback) {
+  _final(callback) {
     this._stopOutbound()
     callback()
   }
 }
 
 export class ContinuousVoiceHandler extends VoiceHandler {
-  constructor (client, settings) {
+  constructor(client, settings) {
     super(client, settings)
   }
 
-  _write (data, _, callback) {
+  _write(data, _, callback) {
     if (this._mute) {
       callback()
     } else {
@@ -71,7 +71,7 @@ export class ContinuousVoiceHandler extends VoiceHandler {
 }
 
 export class PushToTalkVoiceHandler extends VoiceHandler {
-  constructor (client, settings) {
+  constructor(client, settings) {
     super(client, settings)
     this._key = settings.pttKey
     this._pushed = false
@@ -83,7 +83,7 @@ export class PushToTalkVoiceHandler extends VoiceHandler {
     keyboardjs.bind(this._key, this._keydown_handler, this._keyup_handler)
   }
 
-  _write (data, _, callback) {
+  _write(data, _, callback) {
     if (this._pushed && !this._mute) {
       this._getOrCreateOutbound().write(data, callback)
     } else {
@@ -91,7 +91,7 @@ export class PushToTalkVoiceHandler extends VoiceHandler {
     }
   }
 
-  _final (callback) {
+  _final(callback) {
     super._final(e => {
       keyboardjs.unbind(this._key, this._keydown_handler, this._keyup_handler)
       callback(e)
@@ -100,36 +100,64 @@ export class PushToTalkVoiceHandler extends VoiceHandler {
 }
 
 export class VADVoiceHandler extends VoiceHandler {
-  constructor (client, settings) {
+  constructor(client, settings) {
     super(client, settings)
     let level = settings.vadLevel
     const self = this
-    this._vad = vad(audioContext(), theUserMedia, {
-      onVoiceStart () {
-        console.log('vad: start')
-        self._active = true
-      },
-      onVoiceStop () {
-        console.log('vad: stop')
-        self._stopOutbound()
-        self._active = false
-      },
-      onUpdate (val) {
-        self._level = val
-        self.emit('level', val)
-      },
-      noiseCaptureDuration: 0,
-      minNoiseLevel: level,
-      maxNoiseLevel: level
+    navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: false
+    }).then(res =>{
+      this._vad = vad(audioContext(), res, {
+        onVoiceStart() {
+          console.log('vad: start')
+          self._active = true
+        },
+        onVoiceStop() {
+          console.log('vad: stop')
+          self._stopOutbound()
+          self._active = false
+        },
+        onUpdate(val) {
+          self._level = val
+          self.emit('level', val)
+        },
+        noiseCaptureDuration: 0,
+        minNoiseLevel: level,
+        maxNoiseLevel: level
+      })
+      // Need to keep a backlog
     })
-    // Need to keep a backlog of the last ~150ms (dependent on sample rate)
+      .catch((err) => console.log(err))
+    // this._vad = vad(audioContext(), this.audio, {
+    //   onVoiceStart() {
+    //     console.log('vad: start')
+    //     self._active = true
+    //   },
+    //   onVoiceStop() {
+    //     console.log('vad: stop')
+    //     self._stopOutbound()
+    //     self._active = false
+    //   },
+    //   onUpdate(val) {
+    //     self._level = val
+    //     self.emit('level', val)
+    //   },
+    //   noiseCaptureDuration: 0,
+    //   minNoiseLevel: level,
+    //   maxNoiseLevel: level
+    // })
+    // // Need to keep a backlog of the last ~150ms (dependent on sample rate)
     // because VAD will activate with ~125ms delay
     this._backlog = []
     this._backlogLength = 0
     this._backlogLengthMin = 1024 * 6 * 4 // vadBufferLen * (vadDelay + 1) * bytesPerSample
   }
+  async getMicrophone() {
 
-  _write (data, _, callback) {
+  }
+
+  _write(data, _, callback) {
     if (this._active && !this._mute) {
       if (this._backlog.length > 0) {
         for (let oldData of this._backlog) {
@@ -151,7 +179,7 @@ export class VADVoiceHandler extends VoiceHandler {
     }
   }
 
-  _final (callback) {
+  _final(callback) {
     super._final(e => {
       this._vad.destroy()
       callback(e)
@@ -159,18 +187,19 @@ export class VADVoiceHandler extends VoiceHandler {
   }
 }
 
-var theUserMedia = null
-
-export function initVoice (onData, onUserMediaError) {
-  getUserMedia({ audio: true }, (err, userMedia) => {
-    if (err) {
-      onUserMediaError(err)
-    } else {
-      theUserMedia = userMedia
-      var micStream = new MicrophoneStream(userMedia, { objectMode: true, bufferSize: 1024 })
-      micStream.on('data', data => {
-        onData(Buffer.from(data.getChannelData(0).buffer))
-      })
-    }
-  })
+export async function initVoice(onData, onUserMediaError) {
+  await navigator.mediaDevices.getUserMedia({audio: true, video: false})
+    .then((userMedia) => {
+      let theUserMedia = userMedia
+      let micStream = '123'
+    })
 }
+
+// if (err) {
+//   onUserMediaError(err)
+// } else {
+//   theUserMedia = userMedia
+//   var micStream = new MicrophoneStream(userMedia, {objectMode: true, bufferSize: 1024})
+//   micStream.on('data', data => {
+//     onData(Buffer.from(data.getChannelData(0).buffer))
+//   }
