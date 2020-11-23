@@ -18,6 +18,7 @@ declare global {
 class index extends React.Component {
 
   componentDidMount() {
+    window.onload = main
     window.matrixWidget = new MatrixWidget()
     window.mumbleWebConfig = {
       // Which fields to show on the Connect to Server dialog
@@ -77,7 +78,6 @@ class index extends React.Component {
         log(['logentry.mic_init_error', err])
       })
     }
-    window.onload = main
   }
 
   render() {

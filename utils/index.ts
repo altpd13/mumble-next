@@ -312,10 +312,10 @@ export class SettingsDialog {
   audioBitrate: number;
   samplesPerPacket: any;
   // msPerPacket: PureComputed<number>;
-  _testVad: VADVoiceHandler;
+  _testVad: VADVoiceHandler | null;
 
   constructor(settings: any) {
-    this._testVad = new VADVoiceHandler(null,new Settings(<any>{}))
+    this._testVad = null
     this.voiceMode = settings.voiceMode
     this.pttKey = settings.pttKey
     this.pttKeyDisplay = settings.pttKey
@@ -333,7 +333,7 @@ export class SettingsDialog {
     // })//msperPacket ㅇㅣ 바뀌면 samplePerPacket 도 바뀜 ㅋㅋ 루삥뽕
 
     this._setupTestVad()
-    this.vadLevel.subscribe(() => this._setupTestVad())
+    // this.vadLevel.subscribe(() => this._setupTestVad())
   }
 
   _setupTestVad() {
@@ -1105,11 +1105,11 @@ export function initializeUI() {
         }
       }
       // On any future connections
-      window.mumbleUi.thisUser.subscribe((thisUser:any) => {
-        if (thisUser) {
-          upload()
-        }
-      })
+      // window.mumbleUi.thisUser.subscribe((thisUser:any) => {
+      //   if (thisUser) {
+      //     upload()
+      //   }
+      // })
       // And the current one (if already connected)
       if (window.mumbleUi.thisUser()) {
         upload()
