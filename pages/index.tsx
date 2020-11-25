@@ -4,7 +4,8 @@ import React from 'react'
 import GlobalBindings, {initializeUI, log} from "../utils/index";
 import MatrixWidget from "../utils/MatrixWidget"
 import {initVoice} from "../utils/voice";
-
+import Loading from "../component/Loading/Loading";
+import ConnectBox from "../component/ConnectDialog/ConnectBox/ConnectBox";
 
 //************ INDEX ****************/
 declare global {
@@ -16,6 +17,7 @@ declare global {
 }
 
 class index extends React.Component {
+  stuff: any;
 
   componentDidMount() {
     window.onload = main
@@ -58,11 +60,12 @@ class index extends React.Component {
       }
     }//config.js“
     window.mumbleUi = new GlobalBindings(window.mumbleWebConfig)
+
     async function main() {
       // await localizationInitialize(navigator.language);
       // translateEverything();
       initializeUI();
-      initVoice((data:any) => {
+      initVoice((data: any) => {
         // if (testVoiceHandler) {
         //   testVoiceHandler.write(data)
         // }
@@ -74,17 +77,18 @@ class index extends React.Component {
         } else if (window.mumbleUi.voiceHandler) {
           window.mumbleUi.voiceHandler.write(data)
         }
-      }, (err:any) => {
+      }, (err: any) => {
         log(['logentry.mic_init_error', err])
       })
     }
   }
 
   render() {
+    if (typeof window === "undefined"){
+      global.window = {}
+    }
     return (
-      <>
-        <IndexPage/>
-      </>
+      <IndexPage settings={window.mumbleUi}/>
     )
   }
 }
@@ -92,11 +96,11 @@ class index extends React.Component {
 export default index
 
 //********* COMPONENTS **************//
-const IndexPage = () => {
+const IndexPage = (settings:any) => {
   let props = {
-    visible: "true",
-    isMinimal: "true",
-    joinOnly: "false"
+    visible: settings.visible,
+    isMinimal: settings.Minimal,
+    joinOnly: settings.joinOnly
   }
   return (
     <>
@@ -106,12 +110,6 @@ const IndexPage = () => {
   )
 }
 
-const Loading = () => {
-  return (
-    <>
-    </>
-  )
-}
 
 const Container = (props: any) => {
   const isMinimal = props.isMinimal
@@ -121,134 +119,18 @@ const Container = (props: any) => {
   }
   if (isMinimal) {
     return (
-      <div id='contianer'>
+      <div id='container'>
         <ConnectBox {...stuff} />
       </div>
     )
   } else {
     return (
       <div id='container'>
-
+        <ConnectBox {...stuff} />
       </div>
     )
   }
 }
 
-const ConnectBox = (props: any) => {
-  const visible = props.visible
-  const joinOnly = props.joinOnly
-  if (visible && !joinOnly) {
-    return (
-      <>
-        <ConnectBoxDialog/>
-      </>
-    )
-  } else if (visible && joinOnly) {
-    return (
-      <>
-        <ConnectBoxDialog/>
-      </>
-    )
-  } else if (visible) {
-    return (
-      <>
-      </>
-    )
-  } else {
-    return (
-      <div>Error with visible and joinonly :( fuck you</div>
-    )
-  }
-}
 
-class ConnectBoxDialog extends React.Component<any, any> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      address: '',
-      port: '',
-      username: '',
-      password: ''
-    }
-    this.handleChange = this.handleChange.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
-  }
-
-  handleChange = (event: any) => {
-    this.setState({
-      [event.target.name]: event.target.value
-    });
-  }
-
-  handleSubmit(event: any) {
-    event.preventDefault()
-  }
-
-  render() {
-    return (
-      <div className="connect-dialog dialog">
-        <div id="connect-dialog_title" className="dialog-header">
-          Connect to Server
-        </div>
-        <form onSubmit={this.handleSubmit}>
-          <table>
-            <tbody>
-            <tr /*data-bind="if: $root.config.connectDialog.address"*/>
-              <td id="connect-dialog_input_address">Address</td>
-              <td><input name="address" id="address" type="text" value={this.state.address} onChange={this.handleChange}
-                         required/></td>
-            </tr>
-            <tr /*data-bind="if: $root.config.connectDialog.port"*/>
-              <td id="connect-dialog_input_port">Port</td>
-              <td><input name="port" id="port" type="text" value={this.state.port} onChange={this.handleChange}
-                         required/></td>
-            </tr>
-            <tr /*data-bind="if: $root.config.connectDialog.username"*/>
-              <td id="connect-dialog_input_username">Username</td>
-              <td><input name="username" id="username" type="text" value={this.state.username}
-                         onChange={this.handleChange} required/></td>
-            </tr>
-            <tr /*data-bind="if: $root.config.connectDialog.password"*/>
-              <td id="connect-dialog_input_password">Password</td>
-              <td><input name="password" id="password" type="text" value={this.state.password}
-                         onChange={this.handleChange}/></td>
-            </tr>
-            <tr /*data-bind="if: $root.config.connectDialog.token"*/>
-              <td id="connect-dialog_input_tokens">Tokens</td>
-              <td>
-                <input type="text" data-bind='value: tokenToAdd, valueUpdate: "afterkeydown"'/>
-              </td>
-            </tr>
-            <tr data-bind="if: $root.config.connectDialog.token">
-              <td></td>
-              <td>
-                <button id="connect-dialog_controls_remove" className="dialog-submit" type="button"
-                        data-bind="enable: selectedTokens().length > 0, click: removeSelectedTokens()">Remove
-                </button>
-                <button id="connect-dialog_controls_add" className="dialog-submit" type="button"
-                        data-bind="enable: tokenToAdd().length > 0, click: addToken()">Add
-                </button>
-              </td>
-            </tr>
-            <tr data-bind="if: $root.config.connectDialog.token, visible: tokens().length > 0">
-              <td></td>
-              <td><select id="token" /**!multiple='true'*/ /**height="5"*/
-                          data-bind="options:tokens, selectedOptions:selectedTokens"></select></td>
-            </tr>
-            <tr data-bind="if: $root.config.connectDialog.channelName">
-              <td>Channel</td>
-              <td><input id="channelName" type="text" data-bind="value: channelName"/></td>
-            </tr>
-            </tbody>
-          </table>
-          <div className="dialog-footer">
-            <input id="connect-dialog_controls_cancel" className="dialog-close" type="button" data-bind="click: hide"
-                   value="Cancel"/>
-            <input id="connect-dialog_controls_connect" className="dialog-submit" type="submit" value="Connect"/>
-          </div>
-        </form>
-      </div>
-    )
-  }
-}
 

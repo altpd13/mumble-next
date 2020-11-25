@@ -181,9 +181,9 @@ export class ConnectDialog {
     this.hide = this.visible = false
   }
 
-  connect() {
-    this.hide()
-    // ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
+  connect(ui:GlobalBindings) {
+    this.hide = true
+    ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
 
   addToken() {
@@ -359,7 +359,9 @@ export class SettingsDialog {
   }
 
   end() {
-    this._testVad.end()
+    if(this._testVad) {
+      this._testVad.end()
+    }
     // testVoiceHandler = null
   }
 
@@ -426,7 +428,7 @@ export default class GlobalBindings {
   remoteHost: string;
   remotePort: string;
   selfUser: any;
-  root: string;
+  root: any;
   avatarView: string;
   messageBox: string;
   toolbarHorizontal: boolean;
@@ -508,12 +510,12 @@ export default class GlobalBindings {
     this.connector.setSampleRate(audioContext().sampleRate)
 
     // TODO: token
-    this.connector.connect(`wss://${host}:${port}`, {
+    this.connector.connect(`ws://${host}:${port}`, {
       username: username,
       password: password,
       tokens: tokens
     }).done(client => {
-      // log(translate('logentry.connected'))
+      log(['logentry.connected'])
 
       this.client = client
       // Prepare for connection errors
@@ -805,7 +807,9 @@ export default class GlobalBindings {
       this.client.disconnect()
     }
     this.client = null
-    this.selected(null).root(null).selfUser(null)
+    this.selected=null
+    this.root=null
+    this.selfUser=null
   }
 
   connected = () => this.selfUser() != null
