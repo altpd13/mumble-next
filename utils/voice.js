@@ -107,7 +107,7 @@ export class VADVoiceHandler extends VoiceHandler {
     navigator.mediaDevices.getUserMedia({
       audio: true,
       video: false
-    }).then(res =>{
+    }).then(res => {
       this._vad = vad(audioContext(), res, {
         onVoiceStart() {
           console.log('vad: start')
@@ -129,32 +129,11 @@ export class VADVoiceHandler extends VoiceHandler {
       // Need to keep a backlog
     })
       .catch((err) => console.log(err))
-    // this._vad = vad(audioContext(), this.audio, {
-    //   onVoiceStart() {
-    //     console.log('vad: start')
-    //     self._active = true
-    //   },
-    //   onVoiceStop() {
-    //     console.log('vad: stop')
-    //     self._stopOutbound()
-    //     self._active = false
-    //   },
-    //   onUpdate(val) {
-    //     self._level = val
-    //     self.emit('level', val)
-    //   },
-    //   noiseCaptureDuration: 0,
-    //   minNoiseLevel: level,
-    //   maxNoiseLevel: level
-    // })
-    // // Need to keep a backlog of the last ~150ms (dependent on sample rate)
+    // Need to keep a backlog of the last ~150ms (dependent on sample rate)
     // because VAD will activate with ~125ms delay
     this._backlog = []
     this._backlogLength = 0
     this._backlogLengthMin = 1024 * 6 * 4 // vadBufferLen * (vadDelay + 1) * bytesPerSample
-  }
-  async getMicrophone() {
-
   }
 
   _write(data, _, callback) {
@@ -187,19 +166,15 @@ export class VADVoiceHandler extends VoiceHandler {
   }
 }
 
-export async function initVoice(onData, onUserMediaError) {
-  await navigator.mediaDevices.getUserMedia({audio: true, video: false})
-    .then((userMedia) => {
-      let theUserMedia = userMedia
-      let micStream = '123'
-    })
+export function initVoice(onData, onUserMediaError) {
+  getUserMedia({audio: true}, (err, userMedia) => {
+    if (err) {
+      onUserMediaError(err)
+    } else {
+      var micStream = new MicrophoneStream(userMedia, {objectMode: true, bufferSize: 1024})
+      micStream.on('data', data => {
+        onData(Buffer.from(data.getChannelData(0).buffer))
+      })
+    }
+  })
 }
-
-// if (err) {
-//   onUserMediaError(err)
-// } else {
-//   theUserMedia = userMedia
-//   var micStream = new MicrophoneStream(userMedia, {objectMode: true, bufferSize: 1024})
-//   micStream.on('data', data => {
-//     onData(Buffer.from(data.getChannelData(0).buffer))
-//   }
