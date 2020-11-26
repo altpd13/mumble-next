@@ -25,7 +25,7 @@ const ConnectBox = (props: any) => {
       )
     }
   }else {
-    console.log(visible, joinOnly)
+    // console.log(visible, joinOnly)
     return <ConnectBoxDialog />
   }
 }
