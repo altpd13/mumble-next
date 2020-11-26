@@ -3,7 +3,7 @@ import 'subworkers' // polyfill for https://bugs.chromium.org/p/chromium/issues/
 import url from 'url'
 import ByteBuffer from 'bytebuffer'
 import MumbleClient from 'mumble-client'
-import WorkerBasedMumbleConnector from './worker-client'
+import WorkerBasedMumbleConnector from '../workers/worker-client'
 import BufferQueueNode from 'web-audio-buffer-queue'
 import audioContext from 'audio-context'
 import ko from 'knockout'
@@ -357,7 +357,7 @@ class GlobalBindings {
 
       // Note: This call needs to be delayed until the user has interacted with
       // the page in some way (which at this point they have), see: https://goo.gl/7K7WLu
-      this.connector.setSampleRate(audioContext().sampleRate)
+      this.connector. setSampleRate(audioContext().sampleRate)
 
       // TODO: token
       this.connector.connect(`wss://${host}:${port}`, {
@@ -377,7 +377,7 @@ class GlobalBindings {
         // Make sure we stay open if we're running as Matrix widget
         window.matrixWidget.setAlwaysOnScreen(true)
 
-        // Register all channels, recursively 
+        // Register all channels, recursively
         if(channelName.indexOf("/") != 0) {
           channelName = "/"+channelName;
         }

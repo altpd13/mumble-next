@@ -1,5 +1,5 @@
 import 'stream-browserify' // see https://github.com/ericgundrum/pouch-websocket-sync-example/commit/2a4437b013092cc7b2cd84cf1499172c84a963a3
-import WorkerBasedMumbleConnector from './worker-client'
+import WorkerBasedMumbleConnector from '../workers/worker-client'
 import {ContinuousVoiceHandler, PushToTalkVoiceHandler, VADVoiceHandler, VoiceHandler} from './voice'
 import {filterArray} from "./filterArray";
 
@@ -507,6 +507,7 @@ export default class GlobalBindings {
 
     // Note: self call needs to be delayed until the user has interacted with
     // the page in some way (which at self point they have), see: https://goo.gl/7K7WLu
+
     this.connector.setSampleRate(audioContext().sampleRate)
 
     // TODO: token
