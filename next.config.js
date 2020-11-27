@@ -27,6 +27,7 @@ module.exports = withSass({
       loader: 'worker-loader',
       // options: { inline: true }, // also works
       options: {
+        // inline: true,
         name: 'static/[hash].worker.js',
         publicPath: '/_next/',
       },

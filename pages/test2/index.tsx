@@ -13,7 +13,6 @@ export default class extends React.Component {
     this.worker.postMessage('from Host')
     this.worker.addEventListener('message', this.onWorkerMessage)
     this.worker.addEventListener('message',this.logWorkerMessage)
-    console.log(this.worker)
   }
 
   componentWillUnmount() {
