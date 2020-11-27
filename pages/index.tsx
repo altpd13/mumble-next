@@ -6,6 +6,7 @@ import MatrixWidget from "../utils/MatrixWidget"
 // import {initVoice} from "../utils/voice";
 import Loading from "../component/Loading/Loading";
 import ConnectBox from "../component/ConnectDialog/ConnectBox/ConnectBox";
+import {initVoice} from "../utils/voice";
 //************ STUFF ****************/
 // async function main() {
   //   await localizationInitialize(navigator.language);
@@ -82,10 +83,36 @@ class index extends React.Component {
     }//config.js“
     window.mumbleUi = new GlobalBindings(window.mumbleWebConfig)
 
+    // async function main() {
+    //   // await localizationInitialize(navigator.language);
+    //   // translateEverything();
+    //   let testVoiceHandler:any = null
+    //   initializeUI();
+    //   initVoice((data:any) => {
+    //     if (testVoiceHandler) {
+    //       testVoiceHandler.write(data)
+    //     }
+    //     if (!window.mumbleUi.client) {
+    //       if (window.mumbleUi.voiceHandler) {
+    //         window.mumbleUi.voiceHandler.end()
+    //       }
+    //       window.mumbleUi.voiceHandler = null
+    //     } else if (window.mumbleUi.voiceHandler) {
+    //       window.mumbleUi.voiceHandler.write(data)
+    //     }
+    //   }, (err:any) => {
+    //     log(['logentry.mic_init_error', err])
+    //   })
+    // }
+    //
+    // window.onload = main
   }
-
+  save(key:string,val:any) {
+    window.localStorage.setItem('mumble.'+key,val)
+  }
   render() {
     if (typeof window === "undefined"){
+      // @ts-ignore
       global.window = {}
     }
     return (

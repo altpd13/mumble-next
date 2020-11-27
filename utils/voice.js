@@ -171,7 +171,7 @@ export function initVoice(onData, onUserMediaError) {
     if (err) {
       onUserMediaError(err)
     } else {
-      var micStream = new MicrophoneStream(userMedia, {objectMode: true, bufferSize: 1024})
+      let micStream = new MicrophoneStream(userMedia, {objectMode: true, bufferSize: 1024})
       micStream.on('data', data => {
         onData(Buffer.from(data.getChannelData(0).buffer))
       })
