@@ -12,8 +12,8 @@ export default class App extends React.Component<any, any> {
     super(props);
     this.state = {
       audio: null
-    };
-    this.toggleMicrophone = this.toggleMicrophone.bind(this);
+    }
+    this.toggleMicrophone = this.toggleMicrophone.bind(this)
   }
 
   async getMicrophone() {

@@ -1,8 +1,12 @@
 // import CodecsBrowser from "mumble-client-codecs-browser";
 import mumbleConnect from "mumble-client-websocket";
+import Resampler from "libsamplerate.js";
+import toArrayBuffer from "to-arraybuffer";
 
 let sampleRate
 let nextClientId = 1
+let nextVoiceId = 1
+let voiceStreams = []
 let clients = []
 
 // function onMessage(data) {
@@ -83,6 +87,8 @@ function tryConnect(data) {
     }, (err) => {
       reject(reqId, err)
     })
+  }else if (method === '_init') {
+    sampleRate = data.sampleRate
   }
 }
 
@@ -92,7 +98,6 @@ function resolve(reqId, value, transfer) {
     result: value
   }, transfer)
 }
-
 function reject(reqId, value, transfer) {
   console.error(value)
   let jsonValue = JSON.parse(JSON.stringify(value))
@@ -135,20 +140,6 @@ function setupClient(id, client) {
   pushProp(id, client, 'serverVersion')
   pushProp(id, client, 'maxBandwidth')
 }
-
-function registerEventProxy(id, obj, event, transform) {
-  obj.on(event, function (_) {
-    postMessage({
-      clientId: id.client,
-      channelId: id.channel,
-      userId: id.user,
-      event: event,
-      value: transform ? transform.apply(null, arguments) : Array.from(arguments)
-    })
-  })
-}
-
-
 function setupChannel(id, channel) {
   id = Object.assign({}, id, {channel: channel.id})
 
@@ -181,6 +172,80 @@ function setupChannel(id, channel) {
 
   return channel.id
 }
+function setupUser(id, user) {
+  id = Object.assign({}, id, {user: user.id})
+
+  registerEventProxy(id, user, 'update', (actor, props) => {
+    if (actor) {
+      actor = actor.id
+    }
+    if (props.channel != null) {
+      props.channel = props.channel.id
+    }
+    return [actor, props]
+  })
+  registerEventProxy(id, user, 'voice', (stream) => {
+    let voiceId = nextVoiceId++
+
+    let target
+
+    // We want to do as little on the UI thread as possible, so do resampling here as well
+    var resampler = new Resampler({
+      unsafe: true,
+      type: Resampler.Type.ZERO_ORDER_HOLD,
+      ratio: sampleRate / 48000
+    })
+
+    // Pipe stream into resampler
+    stream.on('data', (data) => {
+      // store target so we can pass it on after resampling
+      target = data.target
+      resampler.write(Buffer.from(data.pcm.buffer))
+    }).on('end', () => {
+      resampler.end()
+    })
+
+    // Pipe resampler into output stream on UI thread
+    resampler.on('data', (data) => {
+      data = toArrayBuffer(data) // postMessage can't transfer node's Buffer
+      postMessage({
+        voiceId: voiceId,
+        target: target,
+        buffer: data
+      }, [data])
+    }).on('end', () => {
+      postMessage({
+        voiceId: voiceId
+      })
+    })
+
+    return [voiceId]
+  })
+  registerEventProxy(id, user, 'remove')
+
+  pushProp(id, user, 'channel', (it) => it ? it.id : it)
+  let props = [
+    'uniqueId', 'username', 'mute', 'deaf', 'suppress', 'selfMute', 'selfDeaf',
+    'texture', 'textureHash', 'comment'
+  ]
+  for (let prop of props) {
+    pushProp(id, user, prop)
+  }
+
+  return user.id
+}
+
+function registerEventProxy(id, obj, event, transform) {
+  obj.on(event, function (_) {
+    postMessage({
+      clientId: id.client,
+      channelId: id.channel,
+      userId: id.user,
+      event: event,
+      value: transform ? transform.apply(null, arguments) : Array.from(arguments)
+    })
+  })
+}
 
 function pushProp(id, obj, prop, transform) {
   let value = obj[prop]
@@ -200,6 +265,3 @@ self.addEventListener('message', (ev) => {
     console.error('exception during message event', ev.data, ex)
   }
 })
-
-self.addEventListener('message', (event) => console.log('Worker received:', event.data))
-self.postMessage('Fuck you Main Thread')

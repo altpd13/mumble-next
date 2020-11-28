@@ -181,8 +181,8 @@ export class ConnectDialog {
     this.hide = this.visible = false
   }
 
-  connect(ui:GlobalBindings) {
-    this.hide = true
+  connect(ui: GlobalBindings) {
+    this.hide = true // get rid of this
     ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
 
@@ -359,7 +359,7 @@ export class SettingsDialog {
   }
 
   end() {
-    if(this._testVad) {
+    if (this._testVad) {
       this._testVad.end()
     }
     // testVoiceHandler = null
@@ -520,11 +520,14 @@ export default class GlobalBindings {
 
       this.client = client
       // Prepare for connection errors
-      client.on('error', () => {
-        // log(translate('logentry.connection_error'), err)
-        this.resetClient()
-      })
-
+      if (client === undefined) {
+        console.log('No Client Found')
+      } else {
+        client.on('error', () => {
+          // log(translate('logentry.connection_error'), err)
+          this.resetClient()
+        })
+      }
       // Make sure we stay open if we're running as Matrix widget
       window.matrixWidget.setAlwaysOnScreen(true)
 
@@ -808,9 +811,9 @@ export default class GlobalBindings {
       this.client.disconnect()
     }
     this.client = null
-    this.selected=null
-    this.root=null
-    this.selfUser=null
+    this.selected = null
+    this.root = null
+    this.selfUser = null
   }
 
   connected = () => this.selfUser() != null
@@ -1129,7 +1132,7 @@ export function initializeUI() {
 }
 
 
-export function log (argList:string[]) {
+export function log(argList: string[]) {
   console.log.apply(console, argList)
   let args = []
   for (let i = 0; i < argList.length; i++) {
