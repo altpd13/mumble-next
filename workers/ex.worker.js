@@ -86,6 +86,25 @@ function tryConnect(data) {
   }
 }
 
+function resolve(reqId, value, transfer) {
+  postMessage({
+    reqId: reqId,
+    result: value
+  }, transfer)
+}
+
+function reject(reqId, value, transfer) {
+  console.error(value)
+  let jsonValue = JSON.parse(JSON.stringify(value))
+  if (value.$type) {
+    jsonValue.$type = {name: value.$type.name}
+  }
+  postMessage({
+    reqId: reqId,
+    error: jsonValue
+  }, transfer)
+}
+
 function setupClient(id, client) {
   id = {client: id}
 
