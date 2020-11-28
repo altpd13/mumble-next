@@ -18,7 +18,7 @@ export default class ConnectBoxDialog extends React.Component<any, any> {
 
     this.setState({
       [event.target.name]: event.target.value
-    });
+    })
   }
 
   handleSubmit(event: any) {
