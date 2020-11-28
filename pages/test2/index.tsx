@@ -1,7 +1,7 @@
 import React from 'react'
 
 // @ts-ignore
-import ExampleWorker from '../../workers/ex.worker';
+import ExampleWorker from '../../workers/test.worker';
 
 export default class extends React.Component {
   state = {latestMessage: null}

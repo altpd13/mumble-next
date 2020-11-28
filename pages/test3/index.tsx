@@ -2,12 +2,10 @@ import React, {Component} from 'react'
 
 // @ts-ignore
 import ExampleWorker from "../../workers/ex.worker";
-import TestWorker from "../../workers/test.worker"
 import Promise from "promise";
 
 export default class Test3 extends Component<any, any> {
   worker: Worker;
-  testWorker: Worker;
   client: any;
 
   constructor(props: any) {
@@ -61,8 +59,9 @@ export default class Test3 extends Component<any, any> {
 
   componentDidMount() {
     this.worker = new ExampleWorker()
-    this.testWorker = new TestWorker()
-    this.testWorker.postMessage('Hello to Worker')
+  }
+  componentWillUnmount() {
+    this.worker.terminate();
   }
 
   logWorkerMessage = (event: { data: any }) => console.log(event.data)
