@@ -1,2 +1,2 @@
 ./murmur.x86 -fg -ini murmur.ini&
-websockify 8888 :64738
+./mumble-web-proxy/target/release/mumble-web-proxy --listen-ws 64737 --server localhost:64738
