@@ -511,7 +511,7 @@ export default class GlobalBindings {
     this.connector.setSampleRate(audioContext().sampleRate)
 
     // TODO: token
-    this.connector.connect(`ws://${host}:${port}`, {
+    this.connector.connect(`wss://${host}:${port}`, {
       username: username,
       password: password,
       tokens: tokens
@@ -573,7 +573,7 @@ export default class GlobalBindings {
       })
 
       // Set own user and root channel
-      this.selfUser = client.this.__ui
+      this.selfUser = client.self.__ui
       this.root = client.root.__ui
       // Upate linked channels
       this.updateLinks()
@@ -620,7 +620,7 @@ export default class GlobalBindings {
     let ui: any = user.__ui = {
       model: user,
       talking: 'off',
-      channel: ""
+      channel: null
     }
     // ui.texture = ko.pureComputed(() => {
     //   let raw = ui.rawTexture()
@@ -696,26 +696,26 @@ export default class GlobalBindings {
     Object.entries(simpleProperties).forEach(key => {
       ui[key[1]] = user[key[0]]
     })
-    ui.state = ui.userToState()
+    ui.state = ui.userToState
     if (user.channel) {
-      ui.channel(user.channel.__ui)
-      ui.channel().users.push(ui)
-      ui.channel().users.sort(compareUsers)
+      ui.channel = user.channel.__ui
+      ui.channel.users.push(ui)
+      ui.channel.users.sort(compareUsers)
     }
 
     user.on('update', (properties: any) => {
       Object.entries(simpleProperties).forEach(key => {
         if (properties[key[0]] !== undefined) {
-          ui[key[1]](properties[key[0]])
+          ui[key[1]]=properties[key[0]]
         }
       })
       if (properties.channel !== undefined) {
-        if (ui.channel()) {
-          ui.channel().users.remove(ui)
+        if (ui.channel) {
+          ui.channel.users.remove(ui)
         }
-        ui.channel(properties.channel.__ui)
-        ui.channel().users.push(ui)
-        ui.channel().users.sort(compareUsers)
+        ui.channel=properties.channel.__ui
+        ui.channel.users.push(ui)
+        ui.channel.users.sort(compareUsers)
         this.updateLinks()
       }
       if (properties.textureHash !== undefined) {
@@ -724,8 +724,8 @@ export default class GlobalBindings {
         ui.rawTexture(null)
       }
     }).on('remove', () => {
-      if (ui.channel()) {
-        ui.channel().users.remove(ui)
+      if (ui.channel) {
+        ui.channel.users.remove(ui)
       }
     }).on('voice', (stream: any) => {
       console.log(`User ${user.username} started takling`)
@@ -736,11 +736,11 @@ export default class GlobalBindings {
 
       stream.on('data', (data: any) => {
         if (data.target === 'normal') {
-          ui.talking('on')
+          ui.talking='on'
         } else if (data.target === 'shout') {
-          ui.talking('shout')
+          ui.talking='shout'
         } else if (data.target === 'whisper') {
-          ui.talking('whisper')
+          ui.talking='whisper'
         }
         userNode.write(data.buffer)
       }).on('end', () => {
@@ -760,7 +760,7 @@ export default class GlobalBindings {
     let ui: any = channel.__ui = {
       model: channel,
       expanded: true,
-      parent: "",
+      parent: null,
       channels: [],
       users: [],
       linked: false
@@ -775,9 +775,9 @@ export default class GlobalBindings {
       ui[key[1]] = channel[key[0]]
     })
     if (channel.parent) {
-      ui.parent(channel.parent.__ui)
-      ui.parent().channels.push(ui)
-      ui.parent().channels.sort(sortChannels)
+      ui.parent = channel.parent.__ui
+      ui.parent.channels.push(ui)
+      ui.parent.channels.sort(sortChannels)
     }
     this.updateLinks()
 
@@ -838,13 +838,13 @@ export default class GlobalBindings {
       return
     }
     this.voiceHandler.on('started_talking', () => {
-      if (this.selfUser()) {
-        this.selfUser().talking('on')
+      if (this.selfUser) {
+        this.selfUser.talking='on'
       }
     })
     this.voiceHandler.on('stopped_talking', () => {
-      if (this.selfUser()) {
-        this.selfUser().talking('off')
+      if (this.selfUser) {
+        this.selfUser.talking='off'
       }
     })
     if (this.selfMute) {
@@ -996,10 +996,10 @@ export default class GlobalBindings {
     }
 
     let allChannels = getAllChannels(this.root, [])
-    let ownChannel = this.selfUser().channel().model
+    let ownChannel = this.selfUser.channel.model
     let allLinked = findLinks(ownChannel, [])
     allChannels.forEach(channel => {
-      channel.linked(allLinked.indexOf(channel.model) !== -1)
+      channel.linked = allLinked.indexOf(channel.model) !== -1
     })
 
     function findLinks(channel: any, knownLinks: any[]) {
@@ -1019,7 +1019,7 @@ export default class GlobalBindings {
 
     function getAllChannels(channel: any, channels: any[]) {
       channels.push(channel)
-      channel.channels().forEach((next: any) => getAllChannels(next, channels))
+      channel.channels.forEach((next: any) => getAllChannels(next, channels))
       return channels
     }
   }
@@ -1053,14 +1053,14 @@ export default class GlobalBindings {
 }
 
 function sortChannels(c1: any, c2: any) {
-  if (c1.position() === c2.position()) {
-    return c1.name() === c2.name() ? 0 : c1.name() < c2.name() ? -1 : 1
+  if (c1.position === c2.position) {
+    return c1.name === c2.name ? 0 : c1.name < c2.name ? -1 : 1
   }
-  return c1.position() - c2.position()
+  return c1.position - c2.position
 }
 
 function compareUsers(u1: any, u2: any) {
-  return u1.name() === u2.name() ? 0 : u1.name() < u2.name() ? -1 : 1
+  return u1.name === u2.name ? 0 : u1.name < u2.name ? -1 : 1
 }
 
 export function initializeUI() {

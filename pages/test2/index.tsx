@@ -1,4 +1,5 @@
 import React from 'react'
+const mumbleConnect = require("mumble-client-websocket")
 
 // @ts-ignore
 import ExampleWorker from '../../workers/test.worker';
@@ -13,6 +14,15 @@ export default class extends React.Component {
     this.worker.postMessage('from Host')
     this.worker.addEventListener('message', this.onWorkerMessage)
     this.worker.addEventListener('message',this.logWorkerMessage)
+    mumbleConnect('wss://voice.johni0702.de:433/demo', {
+      username: 'Test',
+    }, function (err, client) {
+      if (err) throw err;
+
+      // Connection established
+      console.log('Welcome message:', client.welcomeMessage)
+      console.log('Actual username:', client.self.username)
+    })
   }
 
   componentWillUnmount() {

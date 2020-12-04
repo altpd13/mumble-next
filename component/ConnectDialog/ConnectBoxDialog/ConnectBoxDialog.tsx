@@ -4,12 +4,15 @@ import React from "react";
 
 export default class ConnectBoxDialog extends React.Component<any, any> {
   constructor(props: any) {
-    super(props);
+    super(props)
     this.state = {
       address: '',
       port: '',
       username: '',
       password: '',
+      placeholderA: 'northamerica.mumble.com',
+      placeholderP: '5401',
+      placeholderU: 'alt',
       hide: false
     }
     this.handleChange = this.handleChange.bind(this)
@@ -58,17 +61,21 @@ export default class ConnectBoxDialog extends React.Component<any, any> {
                 <td id="connect-dialog_input_address">Address</td>
                 <td><input name="address" id="address" type="text" value={this.state.address}
                            onChange={this.handleChange}
+                           placeholder={this.state.placeholderA}
                            required/></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.port"*/>
                 <td id="connect-dialog_input_port">Port</td>
                 <td><input name="port" id="port" type="text" value={this.state.port} onChange={this.handleChange}
+                           placeholder={this.state.placeholderP}
                            required/></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.username"*/>
                 <td id="connect-dialog_input_username">Username</td>
                 <td><input name="username" id="username" type="text" value={this.state.username}
-                           onChange={this.handleChange} required/></td>
+                           onChange={this.handleChange}
+                           placeholder={this.state.placeholderU}
+                           required/></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.password"*/>
                 <td id="connect-dialog_input_password">Password</td>
