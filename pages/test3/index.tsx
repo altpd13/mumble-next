@@ -37,7 +37,7 @@ export default class Test3 extends Component<any, any> {
     }))
     this.worker.postMessage('from Host')
     const mc = new mumbleConnector(this.worker) //MC in da house
-    mc.connect(`ws://${this.state.address}:${this.state.port}`, {
+    mc.connect(`wss://${this.state.address}:${this.state.port}`, {
       username: this.state.username,
       password: this.state.username,
       tokens: ''
