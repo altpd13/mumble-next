@@ -1,12 +1,13 @@
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
-import React from 'react'
-import GlobalBindings, {initializeUI, log} from "../utils/index";
+import React, {useEffect} from 'react'
+import GlobalBindings, {initializeUI} from "../utils/index";
 import MatrixWidget from "../utils/MatrixWidget"
 // import {initVoice} from "../utils/voice";
 import Loading from "../component/Loading/Loading";
-import ConnectBox from "../component/ConnectDialog/ConnectBox/ConnectBox";
+import ConnectBox from "../component/ConnectBox/ConnectBox";
 import {initVoice} from "../utils/voice";
+import Toolbar from "../component/Toolbar";
 //************ STUFF ****************/
 // async function main() {
   //   await localizationInitialize(navigator.language);
@@ -74,49 +75,68 @@ class index extends React.Component {
         'token': '',
         'username': '',
         'password': '',
+        'webrtc': 'auto',
         'joinDialog': false, // replace whole dialog with single "Join Conference" button
         'matrix': false, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
         'avatarurl': '', // download and set the user's Mumble avatar to the image at this URL
         // General
-        'theme': 'MetroMumbleLight'
+        'theme': 'MetroMumbleDark'
       }
     }//config.js“
     window.mumbleUi = new GlobalBindings(window.mumbleWebConfig)
-
     async function main() {
       // await localizationInitialize(navigator.language);
       // translateEverything();
       let testVoiceHandler:any = null
-      initializeUI();
-      initVoice((data:any) => {
-        if (testVoiceHandler) {
-          testVoiceHandler.write(data)
-        }
-        if (!window.mumbleUi.client) {
-          if (window.mumbleUi.voiceHandler) {
-            window.mumbleUi.voiceHandler.end()
+      // initializeUI();
+      // initVoice((data:any) => {
+      //   if (testVoiceHandler) {
+      //     testVoiceHandler.write(data)
+      //   }
+      //   if (!window.mumbleUi.client) {
+      //     if (window.mumbleUi.voiceHandler) {
+      //       window.mumbleUi.voiceHandler.end()
+      //     }
+      //     window.mumbleUi.voiceHandler = null
+      //   } else if (window.mumbleUi.voiceHandler) {
+      //     window.mumbleUi.voiceHandler.write(data)
+      //   }
+      // }, (err:any) => {
+      //   log(['logentry.mic_init_error', err])
+      // })
+      try {
+        const userMedia = await initVoice((data:any) => {
+          if (testVoiceHandler) {
+            testVoiceHandler.write(data)
           }
-          window.mumbleUi.voiceHandler = null
-        } else if (window.mumbleUi.voiceHandler) {
-          window.mumbleUi.voiceHandler.write(data)
-        }
-      }, (err:any) => {
-        log(['logentry.mic_init_error', err])
-      })
+          if (!window.mumbleUi.client) {
+            if (window.mumbleUi.voiceHandler) {
+              window.mumbleUi.voiceHandler.end()
+            }
+            window.mumbleUi.voiceHandler = null
+          } else if (window.mumbleUi.voiceHandler) {
+            window.mumbleUi.voiceHandler.write(data)
+          }
+        })
+        window.mumbleUi._micStream = userMedia
+      } catch (err) {
+        window.alert('Failed to initialize user media\nRefresh page to retry.\n' + err)
+        return
+      }
+      initializeUI();
     }
-
     window.onload = main
   }
+
   save(key:string,val:any) {
     window.localStorage.setItem('mumble.'+key,val)
   }
+
   render() {
-    if (typeof window === "undefined"){
-      // @ts-ignore
-      global.window = {}
-    }
     return (
-      <IndexPage settings={window.mumbleUi}/>
+      <>
+        <IndexPage />
+      </>
     )
   }
 }
@@ -124,37 +144,32 @@ class index extends React.Component {
 export default index
 
 //********* COMPONENTS **************//
-const IndexPage = (settings:any) => {
-  let props = {
-    visible: settings.visible,
-    isMinimal: settings.Minimal,
-    joinOnly: settings.joinOnly
-  }
+const IndexPage = () => {
+  useEffect(()=>{
+  })
+
   return (
-    <>
+    <div>
       <Loading/>
-      <Container {...props} />
-    </>
+      <Container />
+    </div>
   )
 }
 
-
-const Container = (props: any) => {
-  const isMinimal = props.isMinimal
-  let stuff = {
-    visible: props.visible,
-    joinOnly: props.joinOnly
-  }
+const Container = () => {
+  const isMinimal = false
   if (isMinimal) {
     return (
-      <div id='container'>
-        <ConnectBox {...stuff} />
+      <div id='container' className="minimal">
+        <ConnectBox />
+        <Toolbar />
       </div>
     )
   } else {
     return (
       <div id='container'>
-        <ConnectBox {...stuff} />
+        <ConnectBox />
+        <Toolbar />
       </div>
     )
   }

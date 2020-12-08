@@ -2,7 +2,7 @@ import React from "react";
 
 
 
-export default class ConnectBoxDialog extends React.Component<any, any> {
+export default class ConnectDialog extends React.Component<any, any> {
   constructor(props: any) {
     super(props)
     this.state = {
