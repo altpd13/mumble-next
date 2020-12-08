@@ -3,6 +3,7 @@ import WorkerBasedMumbleConnector from '../workers/worker-client'
 import {ContinuousVoiceHandler, PushToTalkVoiceHandler, VADVoiceHandler, VoiceHandler} from './voice'
 import {filterArray} from "./filterArray";
 
+const mumbleConnect = require('mumble-client-websocket')
 const url = require('url')
 // const ByteBuffer = require('bytebuffer')
 const MumbleClient = require('mumble-client')
@@ -183,6 +184,9 @@ export class ConnectDialog {
 
   connect(ui: GlobalBindings) {
     this.hide = true // get rid of this
+    if (ui.detectWebRTC) {
+      ui.webrtc = true
+    }
     ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
 
@@ -422,7 +426,7 @@ export default class GlobalBindings {
   connectErrorDialog: ConnectErrorDialog;
   connectionInfo: ConnectionInfo;
   commentDialog: CommentDialog;
-  settingsDialog: SettingsDialog;
+  settingsDialog: SettingsDialog | null;
   minimalView: boolean;
   log: any[];
   remoteHost: string;
@@ -437,12 +441,19 @@ export default class GlobalBindings {
   selfMute: boolean;
   voiceHandler: VoiceHandler;
   thisUser: any;
+  webrtc: boolean;
+  detectWebRTC: boolean;
+  fallbackConnector: WorkerBasedMumbleConnector;
+  webrtcConnector: { connect: any };
+  _delayedMicNode: any;
+  _micNode: MediaStreamAudioSourceNode | undefined;
+  _micStream: MediaStream | undefined;
+  _delayNode: DelayNode | undefined;
 
 
   constructor(config: any) {
     this.config = config
     this.settings = new Settings(config.settings)
-    this.connector = new WorkerBasedMumbleConnector()
     this.client = null
     this.userContextMenu = new ContextMenu(0, 0, null)
     this.channelContextMenu = new ContextMenu(0, 0, null)
@@ -450,7 +461,7 @@ export default class GlobalBindings {
     this.connectErrorDialog = new ConnectErrorDialog(this.connectDialog)
     this.connectionInfo = new ConnectionInfo(this)
     this.commentDialog = new CommentDialog()
-    this.settingsDialog = new SettingsDialog(this.settings)
+    this.settingsDialog = null
     this.minimalView = false
     this.log = []
     this.remoteHost = ""
@@ -464,6 +475,10 @@ export default class GlobalBindings {
     this.selfDeaf = false
     this.selfMute = false
     this.voiceHandler = new ContinuousVoiceHandler()
+    this.detectWebRTC = true
+    this.webrtc = true
+    this.fallbackConnector = new WorkerBasedMumbleConnector()
+    this.webrtcConnector = {connect: mumbleConnect}
   }
 
   select(element: any) {
@@ -477,7 +492,7 @@ export default class GlobalBindings {
   applySettings() {
     const settingsDialog = this.settingsDialog
 
-    settingsDialog.applyTo(this.settings)
+    if(settingsDialog) settingsDialog.applyTo(this.settings)
 
     this.updateVoiceHandler()
 
@@ -505,17 +520,36 @@ export default class GlobalBindings {
 
     log(['logentry.connecting', host])
 
-    // Note: self call needs to be delayed until the user has interacted with
+    // Note: This call needs to be delayed until the user has interacted with
     // the page in some way (which at self point they have), see: https://goo.gl/7K7WLu
 
-    this.connector.setSampleRate(audioContext().sampleRate)
+    // this.connector.setSampleRate(audioContext().sampleRate)
+
+    let ctx = audioContext()
+    if (!this.webrtc) {
+      this.fallbackConnector.setSampleRate(ctx.sampleRate)
+    }
+    if (!this._delayedMicNode) {
+      this._micNode = ctx.createMediaStreamSource(this._micStream)
+      this._delayNode = ctx.createDelay()
+      this._delayNode.delayTime.value = 0.15
+      this._delayedMicNode = ctx.createMediaStreamDestination()
+    }
 
     // TODO: token
-    this.connector.connect(`ws://${host}:${port}`, {
+    (this.webrtc ? this.webrtcConnector : this.fallbackConnector).connect(`wss://${host}:${port}`, {
       username: username,
       password: password,
+      webrtc: this.webrtc ? {
+        enabled: true,
+        required: true,
+        mic: this._delayedMicNode.stream,
+        audioContext: ctx
+      } : {
+        enabled: false,
+      },
       tokens: tokens
-    }).done(client => {
+    }).done((client: any) => {
       log(['logentry.connected'])
 
       this.client = client
@@ -523,8 +557,8 @@ export default class GlobalBindings {
       if (client === undefined) {
         console.log('No Client Found')
       } else {
-        client.on('error', () => {
-          // log(translate('logentry.connection_error'), err)
+        client.on('error', (err: any) => {
+          log(['logentry.connection_error', err])
           this.resetClient()
         })
       }
@@ -573,7 +607,7 @@ export default class GlobalBindings {
       })
 
       // Set own user and root channel
-      this.selfUser = client.this.__ui
+      this.selfUser = client.self.__ui
       this.root = client.root.__ui
       // Upate linked channels
       this.updateLinks()
@@ -593,13 +627,17 @@ export default class GlobalBindings {
       } else if (this.selfMute) {
         this.client.setselfMute(true)
       }
-    }, err => {
+    }, (err: any) => {
       if (err.$type && err.$type.name === 'Reject') {
         this.connectErrorDialog.type = err.type
         this.connectErrorDialog.reason = err.reason
         this.connectErrorDialog.show()
+      } else if (err === 'server_does_not_support_webrtc' && this.detectWebRTC && this.webrtc) {
+        log(['logentry.connection_fallback_mode'])
+        this.webrtc = false
+        this.connect(username, host, port, tokens, password, channelName)
       } else {
-        // log(translate('logentry.connection_error'), err)
+        log(['logentry.connection_error', err])
       }
     })
   }
@@ -620,7 +658,7 @@ export default class GlobalBindings {
     let ui: any = user.__ui = {
       model: user,
       talking: 'off',
-      channel: ""
+      channel: null
     }
     // ui.texture = ko.pureComputed(() => {
     //   let raw = ui.rawTexture()
@@ -696,26 +734,26 @@ export default class GlobalBindings {
     Object.entries(simpleProperties).forEach(key => {
       ui[key[1]] = user[key[0]]
     })
-    ui.state = ui.userToState()
+    ui.state = ui.userToState
     if (user.channel) {
-      ui.channel(user.channel.__ui)
-      ui.channel().users.push(ui)
-      ui.channel().users.sort(compareUsers)
+      ui.channel = user.channel.__ui
+      ui.channel.users.push(ui)
+      ui.channel.users.sort(compareUsers)
     }
 
     user.on('update', (properties: any) => {
       Object.entries(simpleProperties).forEach(key => {
         if (properties[key[0]] !== undefined) {
-          ui[key[1]](properties[key[0]])
+          ui[key[1]] = properties[key[0]]
         }
       })
       if (properties.channel !== undefined) {
-        if (ui.channel()) {
-          ui.channel().users.remove(ui)
+        if (ui.channel) {
+          ui.channel.users.remove(ui)
         }
-        ui.channel(properties.channel.__ui)
-        ui.channel().users.push(ui)
-        ui.channel().users.sort(compareUsers)
+        ui.channel = properties.channel.__ui
+        ui.channel.users.push(ui)
+        ui.channel.users.sort(compareUsers)
         this.updateLinks()
       }
       if (properties.textureHash !== undefined) {
@@ -724,29 +762,38 @@ export default class GlobalBindings {
         ui.rawTexture(null)
       }
     }).on('remove', () => {
-      if (ui.channel()) {
-        ui.channel().users.remove(ui)
+      if (ui.channel) {
+        ui.channel.users.remove(ui)
       }
     }).on('voice', (stream: any) => {
       console.log(`User ${user.username} started takling`)
-      let userNode = new BufferQueueNode({
-        audioContext: audioContext()
-      })
-      userNode.connect(audioContext().destination)
+      let userNode: any
+      if (!this.webrtc) {
+        userNode = new BufferQueueNode({
+          audioContext: audioContext()
+        })
+        userNode.connect(audioContext().destination)
+      }
+      if (stream.target === 'normal') {
+        ui.talking('on')
+      } else if (stream.target === 'shout') {
+        ui.talking('shout')
+      } else if (stream.target === 'whisper') {
+        ui.talking('whisper')
+      }
 
       stream.on('data', (data: any) => {
-        if (data.target === 'normal') {
-          ui.talking('on')
-        } else if (data.target === 'shout') {
-          ui.talking('shout')
-        } else if (data.target === 'whisper') {
-          ui.talking('whisper')
+        if (this.webrtc) {
+          // mumble-client is in WebRTC mode, no pcm data should arrive this way
+        } else {
+          userNode.write(data.buffer)
         }
-        userNode.write(data.buffer)
       }).on('end', () => {
         console.log(`User ${user.username} stopped takling`)
         ui.talking('off')
-        userNode.end()
+        if (!this.webrtc) {
+          userNode.end()
+        }
       })
     })
   }
@@ -760,7 +807,7 @@ export default class GlobalBindings {
     let ui: any = channel.__ui = {
       model: channel,
       expanded: true,
-      parent: "",
+      parent: null,
       channels: [],
       users: [],
       linked: false
@@ -775,9 +822,9 @@ export default class GlobalBindings {
       ui[key[1]] = channel[key[0]]
     })
     if (channel.parent) {
-      ui.parent(channel.parent.__ui)
-      ui.parent().channels.push(ui)
-      ui.parent().channels.sort(sortChannels)
+      ui.parent = channel.parent.__ui
+      ui.parent.channels.push(ui)
+      ui.parent.channels.sort(sortChannels)
     }
     this.updateLinks()
 
@@ -838,17 +885,25 @@ export default class GlobalBindings {
       return
     }
     this.voiceHandler.on('started_talking', () => {
-      if (this.selfUser()) {
-        this.selfUser().talking('on')
+      if (this.selfUser) {
+        this.selfUser.talking = 'on'
       }
     })
     this.voiceHandler.on('stopped_talking', () => {
-      if (this.selfUser()) {
-        this.selfUser().talking('off')
+      if (this.selfUser) {
+        this.selfUser.talking = 'off'
       }
     })
     if (this.selfMute) {
       this.voiceHandler.setMute(true)
+    }
+    if(this._micNode) this._micNode.disconnect()
+    if(this._delayNode) this._delayNode.disconnect()
+    if (mode === 'vad') {
+      this._micNode.connect(this._delayNode)
+      this._delayNode.connect(this._delayedMicNode)
+    } else {
+      this._micNode.connect(this._delayedMicNode)
     }
 
     this.client.setAudioQuality(
@@ -996,10 +1051,10 @@ export default class GlobalBindings {
     }
 
     let allChannels = getAllChannels(this.root, [])
-    let ownChannel = this.selfUser().channel().model
+    let ownChannel = this.selfUser.channel.model
     let allLinked = findLinks(ownChannel, [])
     allChannels.forEach(channel => {
-      channel.linked(allLinked.indexOf(channel.model) !== -1)
+      channel.linked = allLinked.indexOf(channel.model) !== -1
     })
 
     function findLinks(channel: any, knownLinks: any[]) {
@@ -1019,7 +1074,7 @@ export default class GlobalBindings {
 
     function getAllChannels(channel: any, channels: any[]) {
       channels.push(channel)
-      channel.channels().forEach((next: any) => getAllChannels(next, channels))
+      channel.channels.forEach((next: any) => getAllChannels(next, channels))
       return channels
     }
   }
@@ -1053,14 +1108,14 @@ export default class GlobalBindings {
 }
 
 function sortChannels(c1: any, c2: any) {
-  if (c1.position() === c2.position()) {
-    return c1.name() === c2.name() ? 0 : c1.name() < c2.name() ? -1 : 1
+  if (c1.position === c2.position) {
+    return c1.name === c2.name ? 0 : c1.name < c2.name ? -1 : 1
   }
-  return c1.position() - c2.position()
+  return c1.position - c2.position
 }
 
 function compareUsers(u1: any, u2: any) {
-  return u1.name() === u2.name() ? 0 : u1.name() < u2.name() ? -1 : 1
+  return u1.name === u2.name ? 0 : u1.name < u2.name ? -1 : 1
 }
 
 export function initializeUI() {
@@ -1094,6 +1149,12 @@ export function initializeUI() {
   }
   if (queryParams.password) {
     window.mumbleUi.connectDialog.password = queryParams.password
+  }
+  if (queryParams.webrtc !== 'auto') {
+    window.mumbleUi.detectWebRTC = false
+    if (queryParams.webrtc == 'false') {
+      window.mumbleUi.webrtc = false
+    }
   }
   if (queryParams.channelName) {
     window.mumbleUi.connectDialog.channelName = queryParams.channelName

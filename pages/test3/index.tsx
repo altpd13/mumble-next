@@ -5,7 +5,7 @@ import ExampleWorker from "../../workers/ex.worker";
 import Promise from "promise";
 
 export default class Test3 extends Component<any, any> {
-  worker: Worker;
+  worker: Worker | undefined;
   client: any;
 
   constructor(props: any) {
@@ -35,9 +35,10 @@ export default class Test3 extends Component<any, any> {
     this.setState((state: any) => ({
       isConnected: !state.isConnected
     }))
+    // @ts-ignore
     this.worker.postMessage('from Host')
     const mc = new mumbleConnector(this.worker) //MC in da house
-    mc.connect(`ws://${this.state.address}:${this.state.port}`, {
+    mc.connect(`wss://${this.state.address}:${this.state.port}`, {
       username: this.state.username,
       password: this.state.username,
       tokens: ''
@@ -45,7 +46,8 @@ export default class Test3 extends Component<any, any> {
         console.log('I guess...Connected?')
         this.client = client
 
-        client.on('error', (err: any) => {
+        // @ts-ignore
+      client.on('error', (err: any) => {
           console.log(`Error: ${err}`)
         })
       }, err => {
@@ -61,6 +63,7 @@ export default class Test3 extends Component<any, any> {
     this.worker = new ExampleWorker()
   }
   componentWillUnmount() {
+    // @ts-ignore
     this.worker.terminate();
   }
 
