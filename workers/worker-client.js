@@ -14,8 +14,6 @@ import Worker from './my.worker.js';
  */
 export default class WorkerBasedMumbleConnector {
   constructor() {
-    this._worker = new Worker()
-    this._worker.addEventListener('message', this._onMessage.bind(this))
     this._reqId = 1
     this._requests = {}
     this._clients = {}
@@ -31,6 +29,10 @@ export default class WorkerBasedMumbleConnector {
   }
 
   _postMessage(msg, transfer) {
+    if (!this._worker) {
+      this._worker = new Worker()
+      this._worker.addEventListener('message', this._onMessage.bind(this))
+    }
     try {
       this._worker.postMessage(msg, transfer)
     } catch (err) {
@@ -128,7 +130,7 @@ export default class WorkerBasedMumbleConnector {
   }
 }
 
-class WorkerBasedMumbleClient extends EventEmitter {
+export class WorkerBasedMumbleClient extends EventEmitter {
   constructor(connector, clientId) {
     super()
     this._connector = connector
@@ -344,11 +346,13 @@ class WorkerBasedMumbleUser extends EventEmitter {
         props
       ]
     } else if (name === 'voice') {
-      let [id] = args
+      // let [id] = args
+      let [id,target]  = arts
       let stream = new PassThrough({
         objectMode: true
       })
       this._connector._voiceStreams[id] = stream
+      stream.target = target
       args = [stream]
     } else if (name === 'remove') {
       delete this._client._users[this._id]
