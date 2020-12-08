@@ -10,7 +10,7 @@ export default class JoinDialogBox extends React.Component<any, any> {
   }
 
   render() {
-    let joinOnly = false// temp
+    let joinOnly = this.props.checkJoinOnly// temp
     if(joinOnly) {
       return (
         <div className="join-dialog dialog" /*data-bind="visible: visible() && joinOnly()"*/>
