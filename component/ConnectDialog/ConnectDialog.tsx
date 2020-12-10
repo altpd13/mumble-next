@@ -13,7 +13,7 @@ export default class ConnectDialog extends React.Component<any, any> {
       placeholderA: 'northamerica.mumble.com',
       placeholderP: '5401',
       placeholderU: 'alt',
-      hide: false
+      // hide: false
     }
     this.handleChange = this.handleChange.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
@@ -43,12 +43,10 @@ export default class ConnectDialog extends React.Component<any, any> {
     event.preventDefault()
   }
   hideDialog() {
-    this.setState((state:any) => ({
-      hide : !state.hide
-    }))
+    this.props.onHide(!this.props.hide)
   }
   render() {
-    if(!this.state.hide) {
+    if(!this.props.hide) {
       return (
         <div className="connect-dialog dialog">
           <div id="connect-dialog_title" className="dialog-header">

@@ -271,7 +271,7 @@ export class ConnectionInfo {
 
     this.serverVersion = client.serverVersion
 
-    let dataStats = client.dataStats
+    let dataStats = client._dataStats
     if (dataStats) {
       this.latencyMs = dataStats.mean
       this.latencyDeviation = Math.sqrt(dataStats.variance)
@@ -334,7 +334,7 @@ export class SettingsDialog {
     // this.msPerPacket = ko.pureComputed({
     //   read: () => this.samplesPerPacket() / 48,
     //   write: (value) => this.samplesPerPacket = value * 48
-    // })//msperPacket ㅇㅣ 바뀌면 samplePerPacket 도 바뀜 ㅋㅋ 루삥뽕
+    // })
 
     this._setupTestVad()
     // this.vadLevel.subscribe(() => this._setupTestVad())
@@ -418,7 +418,7 @@ export class SettingsDialog {
 export default class GlobalBindings {
   config: any;
   settings: Settings;
-  connector: WorkerBasedMumbleConnector;
+  connector: WorkerBasedMumbleConnector | undefined;
   client: any
   userContextMenu: ContextMenu;
   channelContextMenu: ContextMenu;
@@ -440,7 +440,6 @@ export default class GlobalBindings {
   selfDeaf: boolean;
   selfMute: boolean;
   voiceHandler: VoiceHandler;
-  thisUser: any;
   webrtc: boolean;
   detectWebRTC: boolean;
   fallbackConnector: WorkerBasedMumbleConnector;
@@ -532,6 +531,7 @@ export default class GlobalBindings {
     if (!this._delayedMicNode) {
       this._micNode = ctx.createMediaStreamSource(this._micStream)
       this._delayNode = ctx.createDelay()
+      // @ts-ignore
       this._delayNode.delayTime.value = 0.15
       this._delayedMicNode = ctx.createMediaStreamDestination()
     }
@@ -900,9 +900,12 @@ export default class GlobalBindings {
     if(this._micNode) this._micNode.disconnect()
     if(this._delayNode) this._delayNode.disconnect()
     if (mode === 'vad') {
+      // @ts-ignore
       this._micNode.connect(this._delayNode)
+      // @ts-ignore
       this._delayNode.connect(this._delayedMicNode)
     } else {
+      // @ts-ignore
       this._micNode.connect(this._delayedMicNode)
     }
 
@@ -1180,7 +1183,7 @@ export function initializeUI() {
       //   }
       // })
       // And the current one (if already connected)
-      if (window.mumbleUi.thisUser()) {
+      if (window.mumbleUi.selfUser()) {
         upload()
       }
     }

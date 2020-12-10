@@ -1,7 +1,7 @@
 import React from 'react'
 
 const ConnectionInfoDialog = (props:any) => {
-  console.log(props)
+  const info = window.mumbleUi.connectionInfo
   return (
     <div className="connection-info-dialog dialog">
       <div className="dialog-header">
@@ -11,37 +11,38 @@ const ConnectionInfoDialog = (props:any) => {
         <h3>Version</h3>
         {/*// <!-- ko with: serverVersion -->*/}
         Protocol
-        <span></span>
+        <span>{` ${info.serverVersion.major} . ${info.serverVersion.minor} . ${info.serverVersion.patch}`}</span>
         <br/>
         <br/>
-        <span data-bind="text: release"></span>
+        <span>{info.serverVersion.release}</span>
         <br/>
-        <span data-bind="text: os"></span>
-        <span data-bind="text: osVersion"></span>
+        <span>{info.serverVersion.os}</span>
+        <span> {info.serverVersion.osVersion}</span>
         <br/>
         {/*// <!-- ko if: !serverVersion() -->*/}
         Unknown
 
         <h3>Control channel</h3>
-        <span data-bind="text: latencyMs().toFixed(2)"></span> ms average latency
-        (<span data-bind="text: latencyDeviation().toFixed(2)"></span> deviation)
+        <span>{info.latencyMs.toFixed(2)}</span> ms average latency
+        (<span>{info.latencyDeviation.toFixed(2)}</span> deviation)
         <br/>
         <br/>
-        Remote host <span data-bind="text: remoteHost"></span>
-        (port <span data-bind="text: remotePort"></span>)
+        Remote host <span>{info.remoteHost}</span>
+        (port <span>{info.remotePort}</span>)
         <br/>
 
         <h3>Audio bandwidth</h3>
-        Maximum <span data-bind="text: (maxBitrate()/1000).toFixed(1)"></span> kbits/s
-        (<span data-bind="text: (maxBandwidth()/1000).toFixed(1)"></span> kbits/s with overhead)
+        Maximum <span>{(info.maxBitrate/1000).toFixed(1)}</span> kbits/s
+        (<span>{(info.maxBandwidth/1000).toFixed(1)}</span> kbits/s with overhead)
         <br/>
-        Current <span data-bind="text: (currentBitrate()/1000).toFixed(1)"></span> kbits/s
-        (<span data-bind="text: (currentBandwidth()/1000).toFixed(1)"></span> kbits/s with overhead)
+        Current <span>{(info.currentBitrate/1000).toFixed(1)}</span> kbits/s
+        (<span>{(info.currentBandwidth/1000).toFixed(1)}</span> kbits/s with overhead)
         <br/>
-        Codec: <span data-bind="text: codec"></span>
+        Codec: <span>{window.mumbleUi.connectionInfo.codec}</span>
       </div>
       <div className="dialog-footer">
         <input className="dialog-close" type="button" onClick={() => {
+          props.onShow(!props.show)
         }} value="OK"/>
       </div>
     </div>
