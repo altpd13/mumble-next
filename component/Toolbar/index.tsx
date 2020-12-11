@@ -8,12 +8,18 @@ class Toolbar extends React.Component<any, any> {
     this.state = {
       toolbarHorizontal: false,
       show: false,
-      showInfo: false
+      showInfo: false,
+      mute:true,
+      deaf:true
     }
     this.changeToolbarDir = this.changeToolbarDir.bind(this)
     this.hideConnectDialog = this.hideConnectDialog.bind(this)
     this.onShowChange = this.onShowChange.bind(this)
     this.showInfoCD = this.showInfoCD.bind(this)
+    this._setDeaf = this._setDeaf.bind(this)
+    this._setMute = this._setMute.bind(this)
+    this.onMuteChange = this.onMuteChange.bind(this)
+    this.onDeafChange = this.onDeafChange.bind(this)
   }
 
   changeToolbarDir() {
@@ -26,17 +32,48 @@ class Toolbar extends React.Component<any, any> {
     this.props.onHide(!this.props.hide)
   }
 
-  onShowChange(){
-    this.setState((state:any)=>({
-      showInfo : !state.showInfo
+  onShowChange() {
+    this.setState((state: any) => ({
+      showInfo: !state.showInfo
     }))
   }
-
   showInfoCD() {
     if(window.mumbleUi.selfUser) {
       window.mumbleUi.connectionInfo.update()
       this.onShowChange()
     } else console.log('no selfUser exists')
+  }
+
+
+
+  _setDeaf() {
+    this.setState((state:any) => ({
+      deaf: !state.deaf
+    }))
+  }
+  onDeafChange() {
+    if(this.state.deaf){
+      this._setDeaf()
+      window.mumbleUi.requestUndeaf(window.mumbleUi)
+    } else {
+      this._setDeaf()
+      window.mumbleUi.requestDeaf(window.mumbleUi)
+    }
+  }
+
+  _setMute() {
+    this.setState((state:any) => ({
+      mute: !state.mute
+    }))
+  }
+  onMuteChange() {
+    if(this.state.mute) {
+      this._setMute()
+      window.mumbleUi.requestMute(window.mumbleUi.selfUser)
+    } else {
+      this._setMute()
+      window.mumbleUi.requestUnmute(window.mumbleUi.selfUser)
+    }
   }
 
   render() {
@@ -50,18 +87,22 @@ class Toolbar extends React.Component<any, any> {
           <img className="tb-information" alt="information" src="/svg/information_icon.svg" onClick={this.showInfoCD}/>
           <div className="divider"/>
           {/*mute and deaf*/}
-          <img className="tb-mute" data-bind="visible: !selfMute(),
+          { this.state.mute?
+            <img className="tb-mute" data-bind="visible: !selfMute(),
                               click: function () { requestMute(thisUser()) }"
-               alt="mute" src="/svg/audio-input-microphone.svg"/>
-          <img className="tb-unmute tb-active" data-bind="visible: selfMute,
+                 alt="mute" src="/svg/audio-input-microphone.svg" onClick={this.onMuteChange}/> :
+            <img className="tb-unmute tb-active" data-bind="visible: selfMute,
                               click: function () { requestUnmute(thisUser()) }"
-               alt="unmute" src="/svg/audio-input-microphone-muted.svg"/>
-          <img className="tb-deaf" data-bind="visible: !selfDeaf(),
+            alt="unmute" src="/svg/audio-input-microphone-muted.svg" onClick={this.onMuteChange}/>
+          }
+          { this.state.deaf?
+            <img className="tb-deaf" data-bind="visible: !selfDeaf(),
                               click: function () { requestDeaf(thisUser()) }"
-               alt="deaf" src="/svg/audio-output.svg"/>
-          <img className="tb-undeaf tb-active" data-bind="visible: selfDeaf,
+                 alt="deaf" src="/svg/audio-output.svg" onClick={this.onDeafChange}/> :
+            <img className="tb-undeaf tb-active" data-bind="visible: selfDeaf,
                               click: function () { requestUndeaf(thisUser()) }"
-               alt="undeaf" src="/svg/audio-output-deafened.svg"/>
+            alt="undeaf" src="/svg/audio-output-deafened.svg" onClick={this.onDeafChange}/>
+          }
           {/*mute and deaf*/}
           <img className="tb-record" data-bind="click: function(){}"
                alt="record" src="/svg/media-record.svg"/>
