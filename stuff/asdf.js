@@ -561,6 +561,7 @@ class GlobalBindings {
           this.connectErrorDialog.show()
         } else if (err === 'server_does_not_support_webrtc' && this.detectWebRTC && this.webrtc) {
           log(translate('logentry.connection_fallback_mode'))
+          console.log('connection going to fallback')
           this.webrtc = false
           this.connect(username, host, port, tokens, password, channelName)
         } else {
