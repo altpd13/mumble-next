@@ -41,8 +41,6 @@ declare global {
 }
 
 class index extends React.Component {
-  stuff: any;
-
   componentDidMount() {
     window.matrixWidget = new MatrixWidget()
     window.mumbleWebConfig = {

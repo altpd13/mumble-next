@@ -28,12 +28,6 @@ export default class ConnectDialog extends React.Component<any, any> {
   }
 
   handleSubmit(event: any) {
-    alert(`
-      Address ${this.state.address}
-      Port ${this.state.port}
-      UserName ${this.state.username}
-      PassWord ${this.state.password}
-    `)
     window.mumbleUi.connectDialog.address = this.state.address
     window.mumbleUi.connectDialog.port = this.state.port
     window.mumbleUi.connectDialog.username = this.state.username

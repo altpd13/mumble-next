@@ -183,9 +183,9 @@ export class ConnectDialog {
   }
 
   connect(ui: GlobalBindings) {
-    this.hide = true // get rid of this
     if (ui.detectWebRTC) {
       ui.webrtc = true
+      console.log(ui.detectWebRTC)
     }
     ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
@@ -448,6 +448,7 @@ export default class GlobalBindings {
   _micNode: MediaStreamAudioSourceNode | undefined;
   _micStream: MediaStream | undefined;
   _delayNode: DelayNode | undefined;
+  select: (element: any) => void;
 
 
   constructor(config: any) {
@@ -478,10 +479,10 @@ export default class GlobalBindings {
     this.webrtc = true
     this.fallbackConnector = new WorkerBasedMumbleConnector()
     this.webrtcConnector = {connect: mumbleConnect}
-  }
 
-  select(element: any) {
-    this.selected = element
+    this.select = (element: any) => {
+      this.selected = element
+    }
   }
 
   openSettings() {
@@ -526,9 +527,11 @@ export default class GlobalBindings {
 
     let ctx = audioContext()
     if (!this.webrtc) {
+      console.log('webRTC false')
       this.fallbackConnector.setSampleRate(ctx.sampleRate)
     }
     if (!this._delayedMicNode) {
+      console.log('delayed mic node false')
       this._micNode = ctx.createMediaStreamSource(this._micStream)
       this._delayNode = ctx.createDelay()
       // @ts-ignore
@@ -549,7 +552,7 @@ export default class GlobalBindings {
         enabled: false,
       },
       tokens: tokens
-    }).done((client: any) => {
+    }).done((client:any) => {
       log(['logentry.connected'])
 
       this.client = client
@@ -863,7 +866,7 @@ export default class GlobalBindings {
     this.selfUser = null
   }
 
-  connected = () => this.selfUser() != null
+  connected = () => this.selfUser != null
 
   updateVoiceHandler = () => {
     if (!this.client) {
@@ -995,12 +998,12 @@ export default class GlobalBindings {
   }
 
   requestMute = (user: any) => {
-    if (user === this.selfUser()) {
+    if (user === this.selfUser) {
       this.selfMute = true
     }
     if (this.connected()) {
-      if (user === this.selfUser()) {
-        this.client.setselfMute(true)
+      if (user === this.selfUser) {
+        this.client.setselfMute=true
       } else {
         user.model.setMute(true)
       }
@@ -1008,12 +1011,12 @@ export default class GlobalBindings {
   }
 
   requestDeaf = (user: any) => {
-    if (user === this.selfUser()) {
+    if (user === this.selfUser) {
       this.selfMute = true
       this.selfDeaf = true
     }
     if (this.connected()) {
-      if (user === this.selfUser()) {
+      if (user === this.selfUser) {
         this.client.setselfDeaf(true)
       } else {
         user.model.setDeaf(true)
@@ -1022,12 +1025,12 @@ export default class GlobalBindings {
   }
 
   requestUnmute = (user: any) => {
-    if (user === this.selfUser()) {
+    if (user === this.selfUser) {
       this.selfMute = false
       this.selfDeaf = false
     }
     if (this.connected()) {
-      if (user === this.selfUser()) {
+      if (user === this.selfUser) {
         this.client.setselfMute(false)
       } else {
         user.model.setMute(false)
@@ -1036,11 +1039,11 @@ export default class GlobalBindings {
   }
 
   requestUndeaf = (user: any) => {
-    if (user === this.selfUser()) {
+    if (user === this.selfUser) {
       this.selfDeaf = false
     }
     if (this.connected()) {
-      if (user === this.selfUser()) {
+      if (user === this.selfUser) {
         this.client.setselfDeaf(false)
       } else {
         user.model.setDeaf(false)
@@ -1183,7 +1186,7 @@ export function initializeUI() {
       //   }
       // })
       // And the current one (if already connected)
-      if (window.mumbleUi.selfUser()) {
+      if (window.mumbleUi.selfUser) {
         upload()
       }
     }
