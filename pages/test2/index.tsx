@@ -16,7 +16,7 @@ export default class extends React.Component {
     this.worker.addEventListener('message',this.logWorkerMessage)
     mumbleConnect('wss://voice.johni0702.de:433/demo', {
       username: 'Test',
-    }, function (err, client) {
+    }, function (err:any, client:any) {
       if (err) throw err;
 
       // Connection established

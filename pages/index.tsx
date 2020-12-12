@@ -1,6 +1,6 @@
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
-import React, {useEffect} from 'react'
+import React, {useEffect,useState} from 'react'
 import GlobalBindings, {initializeUI} from "../utils/index";
 import MatrixWidget from "../utils/MatrixWidget"
 // import {initVoice} from "../utils/voice";
@@ -41,8 +41,6 @@ declare global {
 }
 
 class index extends React.Component {
-  stuff: any;
-
   componentDidMount() {
     window.matrixWidget = new MatrixWidget()
     window.mumbleWebConfig = {
@@ -58,7 +56,7 @@ class index extends React.Component {
       // Default values for user settings
       // You can see your current value by typing `localStorage.getItem('mumble.$setting')` in the web console.
       'settings': {
-        'voiceMode': 'vad', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
+        'voiceMode': 'ptt', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
         'pttKey': 'ctrl + shift',
         'vadLevel': 0.3,
         'toolbarVertical': false,
@@ -158,6 +156,7 @@ const IndexPage = () => {
 
 const Container = () => {
   const isMinimal = false
+  const[hide,onHideChange] = useState(false)
   if (isMinimal) {
     return (
       <div id='container' className="minimal">
@@ -168,8 +167,8 @@ const Container = () => {
   } else {
     return (
       <div id='container'>
-        <ConnectBox />
-        <Toolbar />
+        <ConnectBox hide={hide} onHide={onHideChange}/>
+        <Toolbar hide={hide} onHide={onHideChange}/>
       </div>
     )
   }
