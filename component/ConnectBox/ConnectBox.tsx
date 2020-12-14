@@ -2,6 +2,7 @@
 import React, {useEffect, useState} from "react";
 import ConnectDialog from "../ConnectDialog/ConnectDialog";
 import JoinDialogBox from "../JoinDialog";
+import ConnectTestDialog from "../TestCompo/ConnectTestDialog";
 
 const ConnectBox = (props:any) => {
   // const visible = window.mumbleUi//TODO: make it work god damn
@@ -10,7 +11,8 @@ const ConnectBox = (props:any) => {
   const joinOnly = false
   if (visible && !joinOnly) {
     return (
-      <ConnectDialog hide={props.hide} onHide={props.onHide}/>
+      // <ConnectDialog hide={props.hide} onHide={props.onHide}/>
+      <ConnectTestDialog/>
     )
   } else if (visible && joinOnly) {
     return (
