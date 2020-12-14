@@ -185,7 +185,6 @@ export class ConnectDialog {
   connect(ui: GlobalBindings) {
     if (ui.detectWebRTC) {
       ui.webrtc = true
-      console.log(ui.detectWebRTC)
     }
     ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
@@ -466,7 +465,7 @@ export default class GlobalBindings {
     this.log = []
     this.remoteHost = ""
     this.remotePort = ""
-    this.selfUser = ""
+    this.selfUser = null
     this.root = ""
     this.avatarView = ""
     this.messageBox = ""
@@ -527,11 +526,9 @@ export default class GlobalBindings {
 
     let ctx = audioContext()
     if (!this.webrtc) {
-      console.log('webRTC false')
       this.fallbackConnector.setSampleRate(ctx.sampleRate)
     }
     if (!this._delayedMicNode) {
-      console.log('delayed mic node false')
       this._micNode = ctx.createMediaStreamSource(this._micStream)
       this._delayNode = ctx.createDelay()
       // @ts-ignore
@@ -554,7 +551,6 @@ export default class GlobalBindings {
       tokens: tokens
     }).done((client:any) => {
       log(['logentry.connected'])
-
       this.client = client
       // Prepare for connection errors
       if (client === undefined) {
@@ -583,12 +579,12 @@ export default class GlobalBindings {
       registerChannel(client.root, "")
 
       // Register all users
-      client.users.forEach((user: any) => this.newUser(user))
+      client.users.forEach((user: any) => this._newUser(user))
 
       // Register future channels
       client.on('newChannel', (channel: any) => this.newChannel(channel))
       // Register future users
-      client.on('newUser', (user: any) => this.newUser(user))
+      client.on('newUser', (user: any) => this._newUser(user))
 
       // Handle messages
       client.on('message', (sender: any, message: any, channels: string | any[]) => {
@@ -626,9 +622,9 @@ export default class GlobalBindings {
       this.updateVoiceHandler()
       // Tell server our mute/deaf state (if necessary)
       if (this.selfDeaf) {
-        this.client.setselfDeaf(true)
+        this.client.setSelfDeaf(true)
       } else if (this.selfMute) {
-        this.client.setselfMute(true)
+        this.client.setSelfMute(true)
       }
     }, (err: any) => {
       if (err.$type && err.$type.name === 'Reject') {
@@ -645,7 +641,7 @@ export default class GlobalBindings {
     })
   }
 
-  newUser(user: any) {
+  _newUser(user: any) {
     const simpleProperties = {
       uniqueId: 'uid',
       username: 'name',
@@ -723,7 +719,7 @@ export default class GlobalBindings {
       input.addEventListener('change', () => {
         let reader = new window.FileReader()
         reader.onload = () => {
-          this.client.setselfTexture(reader.result)
+          this.client.setSelfTexture(reader.result)
         }
         if (input.files) {
           reader.readAsArrayBuffer(input.files[0])
@@ -752,7 +748,7 @@ export default class GlobalBindings {
       })
       if (properties.channel !== undefined) {
         if (ui.channel) {
-          ui.channel.users.remove(ui)
+          ui.channel.users.remove
         }
         ui.channel = properties.channel.__ui
         ui.channel.users.push(ui)
@@ -778,11 +774,11 @@ export default class GlobalBindings {
         userNode.connect(audioContext().destination)
       }
       if (stream.target === 'normal') {
-        ui.talking('on')
+        ui.talking='on'
       } else if (stream.target === 'shout') {
-        ui.talking('shout')
+        ui.talking='shout'
       } else if (stream.target === 'whisper') {
-        ui.talking('whisper')
+        ui.talking='whisper'
       }
 
       stream.on('data', (data: any) => {
@@ -793,7 +789,7 @@ export default class GlobalBindings {
         }
       }).on('end', () => {
         console.log(`User ${user.username} stopped takling`)
-        ui.talking('off')
+        ui.talking='off'
         if (!this.webrtc) {
           userNode.end()
         }
@@ -1003,8 +999,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfMute=true
+        this.client.setSelfMute(true)
       } else {
+        console.log(user)
         user.model.setMute(true)
       }
     }
@@ -1017,8 +1014,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfDeaf(true)
+        this.client.setSelfDeaf(true)
       } else {
+        console.log(user)
         user.model.setDeaf(true)
       }
     }
@@ -1031,8 +1029,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfMute(false)
+        this.client.setSelfMute(false)
       } else {
+        console.log(user)
         user.model.setMute(false)
       }
     }
@@ -1044,8 +1043,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfDeaf(false)
+        this.client.setSelfDeaf(false)
       } else {
+        console.log(user)
         user.model.setDeaf(false)
       }
     }
