@@ -1,20 +1,21 @@
 import React from 'react'
-import ConnectionInfoDialog from "../ConnectionInfoDialog/ConnectionInfoDialog";
-import GlobalBindings from "../../utils";
+import ConnectionInfoDialog from "../ConnectionInfoDialog/ConnectionInfoDialog"
+import SettingsDialog from "../SettingsDialog/SettingsDialog";
 
 class Toolbar extends React.Component<any, any> {
   constructor(props: any) {
     super(props)
     this.state = {
       toolbarHorizontal: false,
-      show: false,
       showInfo: false,
+      showSettings: false,
       mute: false,
       deaf: false
     }
     this.changeToolbarDir = this.changeToolbarDir.bind(this)
     this.hideConnectDialog = this.hideConnectDialog.bind(this)
-    this.onShowChange = this.onShowChange.bind(this)
+    this.onShowInfoChange = this.onShowInfoChange.bind(this)
+    this.onShowSettingsChange = this.onShowSettingsChange.bind(this)
     this.showInfoCD = this.showInfoCD.bind(this)
     this._requestDeaf = this._requestDeaf.bind(this)
     this._requestUnDeaf = this._requestUnDeaf.bind(this)
@@ -34,7 +35,7 @@ class Toolbar extends React.Component<any, any> {
     this.props.onHide(!this.props.hide)
   }
 
-  onShowChange() {
+  onShowInfoChange() {
     this.setState((state: any) => ({
       showInfo: !state.showInfo
     }))
@@ -43,10 +44,16 @@ class Toolbar extends React.Component<any, any> {
   showInfoCD() {
     if (window.mumbleUi.selfUser) {
       window.mumbleUi.connectionInfo.update()
-      this.onShowChange()
+      this.onShowInfoChange()
     } else console.log('no selfUser exists')
   }
 
+  onShowSettingsChange() {
+    window.mumbleUi.openSettings()
+    this.setState((state:any) => ({
+      showSettings: !state.showSettings
+    }))
+  }
 
   _requestDeaf() {
     this.setState(() => ({mute: true, deaf: true}))
@@ -95,38 +102,33 @@ class Toolbar extends React.Component<any, any> {
                onClick={this.hideConnectDialog}/>
           <img className="tb-information" alt="information" src="/svg/information_icon.svg" onClick={this.showInfoCD}/>
           <div className="divider"/>
-          {/*mute and deaf*/}
           {!this.state.mute ?
-            <img className="tb-mute" data-bind="visible: !selfMute(),
-                              click: function () { requestMute(thisUser()) }"
-                 alt="mute" src="/svg/audio-input-microphone.svg" onClick={this.onMuteChange}/> :
-            <img className="tb-unmute tb-active" data-bind="visible: selfMute,
-                              click: function () { requestUnmute(thisUser()) }"
-                 alt="unmute" src="/svg/audio-input-microphone-muted.svg" onClick={this.onMuteChange}/>
+            <img className="tb-mute" alt="mute" src="/svg/audio-input-microphone.svg" onClick={this.onMuteChange}/> :
+            <img className="tb-unmute tb-active" alt="unmute" src="/svg/audio-input-microphone-muted.svg" onClick={this.onMuteChange}/>
           }
           {!this.state.deaf ?
-            <img className="tb-deaf" data-bind="visible: !selfDeaf(),
-                              click: function () { requestDeaf(thisUser()) }"
-                 alt="deaf" src="/svg/audio-output.svg" onClick={this.onDeafChange}/> :
-            <img className="tb-undeaf tb-active" data-bind="visible: selfDeaf,
-                              click: function () { requestUndeaf(thisUser()) }"
-                 alt="undeaf" src="/svg/audio-output-deafened.svg" onClick={this.onDeafChange}/>
+            <img className="tb-deaf" alt="deaf" src="/svg/audio-output.svg" onClick={this.onDeafChange}/> :
+            <img className="tb-undeaf tb-active" alt="undeaf" src="/svg/audio-output-deafened.svg" onClick={this.onDeafChange}/>
           }
-          {/*mute and deaf*/}
           <img className="tb-record" data-bind="click: function(){}"
                alt="record" src="/svg/media-record.svg"/>
-          <div className="divider"></div>
+          <div className="divider"/>
           <img className="tb-comment" data-bind="click: commentDialog.show"
                alt="comment" src="/svg/toolbar-comment.svg"/>
-          <div className="divider"></div>
+          <div className="divider"/>
           <img className="tb-settings" data-bind="click: openSettings"
-               alt="settings" src="/svg/config_basic.svg"/>
-          <div className="divider"></div>
+               alt="settings" src="/svg/config_basic.svg" onClick={this.onShowSettingsChange}/>
+          <div className="divider"/>
           <img className="tb-sourcecode" data-bind="click: openSourceCode"
                alt="Source Code" src="/svg/source-code.svg"/>
         </div>
         <div>{this.state.showInfo ?
-          <ConnectionInfoDialog show={this.state.showInfo} onShow={this.onShowChange}/> : null}</div>
+          <ConnectionInfoDialog show={this.state.showInfo} onShow={this.onShowInfoChange}/> : null}</div>
+        <div>
+          {this.state.showSettings ?
+            <SettingsDialog show={this.state.showSettings} onShow={this.onShowSettingsChange}/>: null
+          }
+        </div>
       </>
     )
   }
