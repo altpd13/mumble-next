@@ -56,7 +56,7 @@ class index extends React.Component {
       // Default values for user settings
       // You can see your current value by typing `localStorage.getItem('mumble.$setting')` in the web console.
       'settings': {
-        'voiceMode': 'ptt', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
+        'voiceMode': 'vad', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
         'pttKey': 'ctrl + shift',
         'vadLevel': 0.3,
         'toolbarVertical': false,

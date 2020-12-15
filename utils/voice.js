@@ -35,7 +35,6 @@ export class VoiceHandler extends Writable {
       }
 
       // Note: the samplesPerPacket argument is handled in worker.ts and not passed on
-      // this._outbound = this._client.createVoiceStream(this._settings.samplesPerPacket)
       if (this._client instanceof WorkerBasedMumbleClient) {
         // Note: the samplesPerPacket argument is handled in worker.js and not passed on
         this._outbound = this._client.createVoiceStream(this._settings.samplesPerPacket)

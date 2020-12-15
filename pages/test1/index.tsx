@@ -1,5 +1,5 @@
 import React from "react";
-import AudioAnalyser from "../../component/Audio/AudioAnalyser";
+import AudioAnalyser from "./Audio/AudioAnalyser";
 
 declare global {
   interface Window {

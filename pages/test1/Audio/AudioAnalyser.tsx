@@ -35,9 +35,9 @@ export default class AudioAnalyser extends Component <any> {
   }
 
   tick() {
-    this.analyser.getByteTimeDomainData(this.dataArray);
-    this.setState({audioData: this.dataArray});
-    this.rafId = requestAnimationFrame(this.tick);
+    this.analyser.getByteTimeDomainData(this.dataArray)
+    this.setState({audioData: this.dataArray})
+    this.rafId = requestAnimationFrame(this.tick)
   }
 
   render() {
