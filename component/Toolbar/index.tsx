@@ -110,17 +110,14 @@ class Toolbar extends React.Component<any, any> {
             <img className="tb-deaf" alt="deaf" src="/svg/audio-output.svg" onClick={this.onDeafChange}/> :
             <img className="tb-undeaf tb-active" alt="undeaf" src="/svg/audio-output-deafened.svg" onClick={this.onDeafChange}/>
           }
-          <img className="tb-record" data-bind="click: function(){}"
-               alt="record" src="/svg/media-record.svg"/>
+          <img className="tb-record" alt="record" src="/svg/media-record.svg"/>
           <div className="divider"/>
-          <img className="tb-comment" data-bind="click: commentDialog.show"
-               alt="comment" src="/svg/toolbar-comment.svg"/>
+          <img className="tb-comment" alt="comment" src="/svg/toolbar-comment.svg"/>
           <div className="divider"/>
-          <img className="tb-settings" data-bind="click: openSettings"
-               alt="settings" src="/svg/config_basic.svg" onClick={this.onShowSettingsChange}/>
+          <img className="tb-settings" alt="settings" src="/svg/config_basic.svg" onClick={this.onShowSettingsChange}/>
           <div className="divider"/>
           <img className="tb-sourcecode" data-bind="click: openSourceCode"
-               alt="Source Code" src="/svg/source-code.svg"/>
+               alt="Source Code" src="/svg/source-code.svg" onClick={()=>{window.mumbleUi.openSourceCode()}}/>
         </div>
         <div>{this.state.showInfo ?
           <ConnectionInfoDialog show={this.state.showInfo} onShow={this.onShowInfoChange}/> : null}</div>

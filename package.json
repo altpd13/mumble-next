@@ -8,6 +8,7 @@
     "test": "jest",
     "type-check": "tsc"
   },
+  "homepage": "https://github.com/altpd13/mumble-next",
   "dependencies": {
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.9.6",
