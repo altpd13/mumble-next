@@ -526,7 +526,7 @@ export default class GlobalBindings {
 
     this.remoteHost = host
     this.remotePort = port
-
+    let connectLink  = port === '433/demo' ? `wss://${host}/demo` : `wss://${host}:${port}`
     log(['logentry.connecting', host])
 
     // Note: This call needs to be delayed until the user has interacted with
@@ -547,7 +547,7 @@ export default class GlobalBindings {
     }
 
     // TODO: token
-    (this.webrtc ? this.webrtcConnector : this.fallbackConnector).connect(`wss://${host}:${port}`, {
+    (this.webrtc ? this.webrtcConnector : this.fallbackConnector).connect(connectLink, {
       username: username,
       password: password,
       webrtc: this.webrtc ? {
@@ -750,7 +750,7 @@ export default class GlobalBindings {
       ui.channel.users.sort(compareUsers)
     }
 
-    user.on('update', (properties: any) => {
+    user.on('update', (actor:any ,properties: any) => {
       Object.entries(simpleProperties).forEach(key => {
         if (properties[key[0]] !== undefined) {
           ui[key[1]] = properties[key[0]]
@@ -772,7 +772,10 @@ export default class GlobalBindings {
       }
     }).on('remove', () => {
       if (ui.channel) {
-        ui.channel.users.remove(ui)
+        const itemToFind = ui.channel.users.find(function(item:any) {return item === ui})
+        const idx = ui.channel.users.indexOf(itemToFind)
+        if (idx > -1) ui.channel.users.splice(idx, 1)
+        // ui.channel.users.remove(ui)
       }
     }).on('voice', (stream: any) => {
       console.log(`User ${user.username} started takling`)
@@ -1039,7 +1042,6 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        console.log('unmute')
         this.client.setSelfMute(false)
       } else {
         user.model.setMute(false)

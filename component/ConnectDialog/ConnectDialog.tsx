@@ -10,9 +10,9 @@ export default class ConnectDialog extends React.Component<any, any> {
       port: '',
       username: '',
       password: '',
-      placeholderA: 'northamerica.mumble.com',
-      placeholderP: '5401',
-      placeholderU: 'alt',
+      // placeholderA: 'northamerica.mumble.com',
+      // placeholderP: '5401',
+      // placeholderU: 'alt',
       // hide: false
     }
     this.handleChange = this.handleChange.bind(this)
