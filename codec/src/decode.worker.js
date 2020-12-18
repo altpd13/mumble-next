@@ -22,7 +22,7 @@ onmessage =  e => {
     if (!opusDecoder) {
       opusDecoder = new OpusDecoder({
         unsafe: true,
-        channels: 1, // TODO
+        channels: 1,
         rate: MUMBLE_SAMPLE_RATE
       })
     }
