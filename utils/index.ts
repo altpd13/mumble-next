@@ -312,10 +312,10 @@ export class SettingsDialog {
   testVadLevel: number;
   testVadActive: boolean;
   showAvatars: any;
-  userCountInChannelName: any;
+  userCountInChannelName: boolean;
   audioBitrate: number;
   samplesPerPacket: any;
-  // msPerPacket: PureComputed<number>;
+  msPerPacket: number;
   _testVad: VADVoiceHandler | null;
   constructor(settings: any) {
     this._testVad = null
@@ -326,30 +326,29 @@ export class SettingsDialog {
     this.testVadLevel = 0
     this.testVadActive = false
     this.showAvatars = settings.showAvatars
-    this.userCountInChannelName = settings.userCountInChannelName
+    this.userCountInChannelName = Boolean(settings.userCountInChannelName)
     // Need to wrap self in a pureComputed to make sure it's always numeric
     this.audioBitrate = settings.audioBitrate
     this.samplesPerPacket = settings.samplesPerPacket
-    // this.msPerPacket = ko.pureComputed({
-    //   read: () => this.samplesPerPacket() / 48,
-    //   write: (value) => this.samplesPerPacket = value * 48
-    // })
+    this.msPerPacket = this.samplesPerPacket / 48,
     this._setupTestVad()
-    // this.vadLevel = this._setupTestVad()//TODO: call the _setupTestVad when this.vadlevel is used
+  }
+
+  get changeVadLevel() {
+    return this.vadLevel
+  }
+  set changeVadLevel(value:number) {
+    this.vadLevel = value
+    this._setupTestVad()
   }
 
   _setupTestVad() {
     if (this._testVad) {
-      console.log(this._testVad)
       this._testVad.end()
     }
     let dummySettings = new Settings({})
     this.applyTo(dummySettings)
     this._testVad = new VADVoiceHandler(null, dummySettings)
-
-    if(!this._testVad._vad) {
-      this._testVad._vad = vad(audioContext(),window.mumbleUi._micStream)
-    }
 
     this._testVad.on('started_talking', () => {
       this.testVadActive = true
@@ -402,7 +401,7 @@ export class SettingsDialog {
   totalBandwidth() {
     return MumbleClient.calcEnforcableBandwidth(
       this.audioBitrate,
-      this.samplesPerPacket(),
+      this.samplesPerPacket,
       true
     )
   }
@@ -410,7 +409,7 @@ export class SettingsDialog {
   positionBandwidth() {
     return this.totalBandwidth() - MumbleClient.calcEnforcableBandwidth(
       this.audioBitrate,
-      this.samplesPerPacket(),
+      this.samplesPerPacket,
       false
     )
   }
@@ -418,7 +417,7 @@ export class SettingsDialog {
   overheadBandwidth() {
     return MumbleClient.calcEnforcableBandwidth(
       0,
-      this.samplesPerPacket(),
+      this.samplesPerPacket,
       false
     )
   }
@@ -449,7 +448,7 @@ export default class GlobalBindings {
   selected: any;
   selfDeaf: boolean;
   selfMute: boolean;
-  voiceHandler: VoiceHandler;
+  voiceHandler: VoiceHandler | null;
   webrtc: boolean;
   detectWebRTC: boolean;
   fallbackConnector: WorkerBasedMumbleConnector;
@@ -484,7 +483,7 @@ export default class GlobalBindings {
     this.selected = ""
     this.selfDeaf = false
     this.selfMute = false
-    this.voiceHandler = new ContinuousVoiceHandler()
+    this.voiceHandler = null
     this.detectWebRTC = true
     this.webrtc = true
     this.fallbackConnector = new WorkerBasedMumbleConnector()
@@ -881,7 +880,7 @@ export default class GlobalBindings {
     }
     if (this.voiceHandler) {
       this.voiceHandler.end()
-      // this.voiceHandler = null
+      this.voiceHandler = null
     }
     let mode = this.settings.voiceMode
     if (mode === 'cont') {
@@ -1040,9 +1039,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
+        console.log('unmute')
         this.client.setSelfMute(false)
       } else {
-        console.log(user)
         user.model.setMute(false)
       }
     }
