@@ -347,7 +347,7 @@ class WorkerBasedMumbleUser extends EventEmitter {
       ]
     } else if (name === 'voice') {
       // let [id] = args
-      let [id,target]  = arts
+      let [id,target]  = args
       let stream = new PassThrough({
         objectMode: true
       })

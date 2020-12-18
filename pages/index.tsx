@@ -56,12 +56,12 @@ class index extends React.Component {
       // Default values for user settings
       // You can see your current value by typing `localStorage.getItem('mumble.$setting')` in the web console.
       'settings': {
-        'voiceMode': 'ptt', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
+        'voiceMode': 'vad', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
         'pttKey': 'ctrl + shift',
         'vadLevel': 0.3,
         'toolbarVertical': false,
         'showAvatars': 'always', // one of 'always', 'own_channel', 'linked_channel', 'minimal_only', 'never'
-        'userCountInChannelName': false,
+        'userCountInChannelName': true,
         'audioBitrate': 40000, // bits per second
         'samplesPerPacket': 960
       },
@@ -105,6 +105,7 @@ class index extends React.Component {
       try {
         const userMedia = await initVoice((data:any) => {
           if (testVoiceHandler) {
+            console.log('testVoice Handler')
             testVoiceHandler.write(data)
           }
           if (!window.mumbleUi.client) {

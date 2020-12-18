@@ -23,19 +23,19 @@ export class VoiceHandler extends Writable {
     }
   }
 
-  _getOrCreateOutbound() {
+  _getOrCreateOutbound() { //TODO: dropstream not working (this._outbound === null)
     if (this._mute) {
       throw new Error('tried to send audio while self-muted')
     }
     if (!this._outbound) {
       if (!this._client) {
+        console.log('hello')
         this._outbound = DropStream.obj()
         this.emit('started_talking')
         return this._outbound
       }
 
       // Note: the samplesPerPacket argument is handled in worker.ts and not passed on
-      // this._outbound = this._client.createVoiceStream(this._settings.samplesPerPacket)
       if (this._client instanceof WorkerBasedMumbleClient) {
         // Note: the samplesPerPacket argument is handled in worker.js and not passed on
         this._outbound = this._client.createVoiceStream(this._settings.samplesPerPacket)
@@ -109,33 +109,24 @@ export class VADVoiceHandler extends VoiceHandler {
     super(client, settings)
     let level = settings.vadLevel
     const self = this
-    navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: false
-    }).then(res => {
-      this._vad = vad(audioContext(), res, {
-        onVoiceStart() {
-          console.log('vad: start')
-          self._active = true
-        },
-        onVoiceStop() {
-          console.log('vad: stop')
-          self._stopOutbound()
-          self._active = false
-        },
-        onUpdate(val) {
-          self._level = val
-          self.emit('level', val)
-        },
-        noiseCaptureDuration: 0,
-        minNoiseLevel: level,
-        maxNoiseLevel: level
-      })
-      // Need to keep a backlog
+    this._vad = vad(audioContext(), theUserMedia, {
+      onVoiceStart () {
+        console.log('vad: start')
+        self._active = true
+      },
+      onVoiceStop () {
+        console.log('vad: stop')
+        self._stopOutbound()
+        self._active = false
+      },
+      onUpdate (val) {
+        self._level = val
+        self.emit('level', val)
+      },
+      noiseCaptureDuration: 0,
+      minNoiseLevel: level,
+      maxNoiseLevel: level
     })
-      .catch((err) => console.log(err))
-    // Need to keep a backlog of the last ~150ms (dependent on sample rate)
-    // because VAD will activate with ~125ms delay
     this._backlog = []
     this._backlogLength = 0
     this._backlogLengthMin = 1024 * 6 * 4 // vadBufferLen * (vadDelay + 1) * bytesPerSample

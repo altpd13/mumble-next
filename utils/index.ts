@@ -3,6 +3,7 @@ import WorkerBasedMumbleConnector from '../workers/worker-client'
 import {ContinuousVoiceHandler, PushToTalkVoiceHandler, VADVoiceHandler, VoiceHandler} from './voice'
 import {filterArray} from "./filterArray";
 
+const vad =  require('voice-activity-detection')
 const mumbleConnect = require('mumble-client-websocket')
 const url = require('url')
 // const ByteBuffer = require('bytebuffer')
@@ -11,43 +12,43 @@ const BufferQueueNode = require('web-audio-buffer-queue')
 const audioContext = require('audio-context')
 // const keyboardjs = require('keyboardjs')
 
-// const mumbleWebConfig = {
-//   // Which fields to show on the Connect to Server dialog
-//   'connectDialog': {
-//     'address': true,
-//     'port': true,
-//     'token': true,
-//     'username': true,
-//     'password': true,
-//     'channelName': false
-//   },
-//   // Default values for user settings
-//   // You can see your current value by typing `localStorage.getItem('mumble.$setting')` in the web console.
-//   'settings': {
-//     'voiceMode': 'vad', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
-//     'pttKey': 'ctrl + shift',
-//     'vadLevel': 0.3,
-//     'toolbarVertical': false,
-//     'showAvatars': 'always', // one of 'always', 'own_channel', 'linked_channel', 'minimal_only', 'never'
-//     'userCountInChannelName': false,
-//     'audioBitrate': 40000, // bits per second
-//     'samplesPerPacket': 960
-//   },
-//   // Default values (can be changed by passing a query parameter of the same name)
-//   'defaults': {
-//     // Connect Dialog
-//     'address': window.location.hostname,
-//     'port': '443',
-//     'token': '',
-//     'username': '',
-//     'password': '',
-//     'joinDialog': false, // replace whole dialog with single "Join Conference" button
-//     'matrix': false, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
-//     'avatarurl': '', // download and set the user's Mumble avatar to the image at this URL
-//     // General
-//     'theme': 'MetroMumbleLight'
-//   }
-// }
+const sampleConfig = {
+  // Which fields to show on the Connect to Server dialog
+  'connectDialog': {
+    'address': true,
+    'port': true,
+    'token': true,
+    'username': true,
+    'password': true,
+    'channelName': false
+  },
+  // Default values for user settings
+  // You can see your current value by typing `localStorage.getItem('mumble.$setting')` in the web console.
+  'settings': {
+    'voiceMode': 'vad', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
+    'pttKey': 'ctrl + shift',
+    'vadLevel': 0.3,
+    'toolbarVertical': false,
+    'showAvatars': 'always', // one of 'always', 'own_channel', 'linked_channel', 'minimal_only', 'never'
+    'userCountInChannelName': false,
+    'audioBitrate': 40000, // bits per second
+    'samplesPerPacket': 960
+  },
+  // Default values (can be changed by passing a query parameter of the same name)
+  'defaults': {
+    // Connect Dialog
+    'address': '',
+    'port': '443',
+    'token': '',
+    'username': '',
+    'password': '',
+    'joinDialog': false, // replace whole dialog with single "Join Conference" button
+    'matrix': false, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
+    'avatarurl': '', // download and set the user's Mumble avatar to the image at this URL
+    // General
+    'theme': 'MetroMumbleLight'
+  }
+}
 
 // interface mumbleWebConfig {
 //   'connectDialog': {
@@ -185,7 +186,6 @@ export class ConnectDialog {
   connect(ui: GlobalBindings) {
     if (ui.detectWebRTC) {
       ui.webrtc = true
-      console.log(ui.detectWebRTC)
     }
     ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
@@ -312,12 +312,11 @@ export class SettingsDialog {
   testVadLevel: number;
   testVadActive: boolean;
   showAvatars: any;
-  userCountInChannelName: any;
+  userCountInChannelName: boolean;
   audioBitrate: number;
   samplesPerPacket: any;
-  // msPerPacket: PureComputed<number>;
+  msPerPacket: number;
   _testVad: VADVoiceHandler | null;
-
   constructor(settings: any) {
     this._testVad = null
     this.voiceMode = settings.voiceMode
@@ -327,28 +326,38 @@ export class SettingsDialog {
     this.testVadLevel = 0
     this.testVadActive = false
     this.showAvatars = settings.showAvatars
-    this.userCountInChannelName = settings.userCountInChannelName
+    this.userCountInChannelName = Boolean(settings.userCountInChannelName)
     // Need to wrap self in a pureComputed to make sure it's always numeric
     this.audioBitrate = settings.audioBitrate
     this.samplesPerPacket = settings.samplesPerPacket
-    // this.msPerPacket = ko.pureComputed({
-    //   read: () => this.samplesPerPacket() / 48,
-    //   write: (value) => this.samplesPerPacket = value * 48
-    // })
-
+    this.msPerPacket = this.samplesPerPacket / 48,
     this._setupTestVad()
-    // this.vadLevel.subscribe(() => this._setupTestVad())
+  }
+
+  get changeVadLevel() {
+    return this.vadLevel
+  }
+  set changeVadLevel(value:number) {
+    this.vadLevel = value
+    this._setupTestVad()
   }
 
   _setupTestVad() {
     if (this._testVad) {
       this._testVad.end()
     }
-    let dummySettings = new Settings(<any>{})
+    let dummySettings = new Settings({})
     this.applyTo(dummySettings)
     this._testVad = new VADVoiceHandler(null, dummySettings)
-    this._testVad.on('started_talking', () => this.testVadActive = true)
-      .on('stopped_talking', () => this.testVadActive = false)
+
+    this._testVad.on('started_talking', () => {
+      this.testVadActive = true
+      console.log('on')
+    })
+      .on('stopped_talking', () => {
+        this.testVadActive = false
+        console.log('off')
+      })
       .on('level', (level: number) => this.testVadLevel = level)
   }
 
@@ -392,7 +401,7 @@ export class SettingsDialog {
   totalBandwidth() {
     return MumbleClient.calcEnforcableBandwidth(
       this.audioBitrate,
-      this.samplesPerPacket(),
+      this.samplesPerPacket,
       true
     )
   }
@@ -400,7 +409,7 @@ export class SettingsDialog {
   positionBandwidth() {
     return this.totalBandwidth() - MumbleClient.calcEnforcableBandwidth(
       this.audioBitrate,
-      this.samplesPerPacket(),
+      this.samplesPerPacket,
       false
     )
   }
@@ -408,7 +417,7 @@ export class SettingsDialog {
   overheadBandwidth() {
     return MumbleClient.calcEnforcableBandwidth(
       0,
-      this.samplesPerPacket(),
+      this.samplesPerPacket,
       false
     )
   }
@@ -439,7 +448,7 @@ export default class GlobalBindings {
   selected: any;
   selfDeaf: boolean;
   selfMute: boolean;
-  voiceHandler: VoiceHandler;
+  voiceHandler: VoiceHandler | null;
   webrtc: boolean;
   detectWebRTC: boolean;
   fallbackConnector: WorkerBasedMumbleConnector;
@@ -466,7 +475,7 @@ export default class GlobalBindings {
     this.log = []
     this.remoteHost = ""
     this.remotePort = ""
-    this.selfUser = ""
+    this.selfUser = null
     this.root = ""
     this.avatarView = ""
     this.messageBox = ""
@@ -474,7 +483,7 @@ export default class GlobalBindings {
     this.selected = ""
     this.selfDeaf = false
     this.selfMute = false
-    this.voiceHandler = new ContinuousVoiceHandler()
+    this.voiceHandler = null
     this.detectWebRTC = true
     this.webrtc = true
     this.fallbackConnector = new WorkerBasedMumbleConnector()
@@ -492,7 +501,7 @@ export default class GlobalBindings {
   applySettings() {
     const settingsDialog = this.settingsDialog
 
-    if(settingsDialog) settingsDialog.applyTo(this.settings)
+    if (settingsDialog) settingsDialog.applyTo(this.settings)
 
     this.updateVoiceHandler()
 
@@ -504,7 +513,7 @@ export default class GlobalBindings {
     if (this.settingsDialog) {
       this.settingsDialog.end()
     }
-    // this.settingsDialog = null
+    this.settingsDialog = null
   }
 
   // getTimestring() {
@@ -527,11 +536,9 @@ export default class GlobalBindings {
 
     let ctx = audioContext()
     if (!this.webrtc) {
-      console.log('webRTC false')
       this.fallbackConnector.setSampleRate(ctx.sampleRate)
     }
     if (!this._delayedMicNode) {
-      console.log('delayed mic node false')
       this._micNode = ctx.createMediaStreamSource(this._micStream)
       this._delayNode = ctx.createDelay()
       // @ts-ignore
@@ -552,9 +559,8 @@ export default class GlobalBindings {
         enabled: false,
       },
       tokens: tokens
-    }).done((client:any) => {
+    }).done((client: any) => {
       log(['logentry.connected'])
-
       this.client = client
       // Prepare for connection errors
       if (client === undefined) {
@@ -583,12 +589,12 @@ export default class GlobalBindings {
       registerChannel(client.root, "")
 
       // Register all users
-      client.users.forEach((user: any) => this.newUser(user))
+      client.users.forEach((user: any) => this._newUser(user))
 
       // Register future channels
       client.on('newChannel', (channel: any) => this.newChannel(channel))
       // Register future users
-      client.on('newUser', (user: any) => this.newUser(user))
+      client.on('newUser', (user: any) => this._newUser(user))
 
       // Handle messages
       client.on('message', (sender: any, message: any, channels: string | any[]) => {
@@ -626,9 +632,9 @@ export default class GlobalBindings {
       this.updateVoiceHandler()
       // Tell server our mute/deaf state (if necessary)
       if (this.selfDeaf) {
-        this.client.setselfDeaf(true)
+        this.client.setSelfDeaf(true)
       } else if (this.selfMute) {
-        this.client.setselfMute(true)
+        this.client.setSelfMute(true)
       }
     }, (err: any) => {
       if (err.$type && err.$type.name === 'Reject') {
@@ -645,7 +651,7 @@ export default class GlobalBindings {
     })
   }
 
-  newUser(user: any) {
+  _newUser(user: any) {
     const simpleProperties = {
       uniqueId: 'uid',
       username: 'name',
@@ -723,7 +729,7 @@ export default class GlobalBindings {
       input.addEventListener('change', () => {
         let reader = new window.FileReader()
         reader.onload = () => {
-          this.client.setselfTexture(reader.result)
+          this.client.setSelfTexture(reader.result)
         }
         if (input.files) {
           reader.readAsArrayBuffer(input.files[0])
@@ -752,7 +758,7 @@ export default class GlobalBindings {
       })
       if (properties.channel !== undefined) {
         if (ui.channel) {
-          ui.channel.users.remove(ui)
+          ui.channel.users.remove
         }
         ui.channel = properties.channel.__ui
         ui.channel.users.push(ui)
@@ -778,11 +784,11 @@ export default class GlobalBindings {
         userNode.connect(audioContext().destination)
       }
       if (stream.target === 'normal') {
-        ui.talking('on')
+        ui.talking = 'on'
       } else if (stream.target === 'shout') {
-        ui.talking('shout')
+        ui.talking = 'shout'
       } else if (stream.target === 'whisper') {
-        ui.talking('whisper')
+        ui.talking = 'whisper'
       }
 
       stream.on('data', (data: any) => {
@@ -793,7 +799,7 @@ export default class GlobalBindings {
         }
       }).on('end', () => {
         console.log(`User ${user.username} stopped takling`)
-        ui.talking('off')
+        ui.talking = 'off'
         if (!this.webrtc) {
           userNode.end()
         }
@@ -874,7 +880,7 @@ export default class GlobalBindings {
     }
     if (this.voiceHandler) {
       this.voiceHandler.end()
-      // this.voiceHandler = null
+      this.voiceHandler = null
     }
     let mode = this.settings.voiceMode
     if (mode === 'cont') {
@@ -900,8 +906,8 @@ export default class GlobalBindings {
     if (this.selfMute) {
       this.voiceHandler.setMute(true)
     }
-    if(this._micNode) this._micNode.disconnect()
-    if(this._delayNode) this._delayNode.disconnect()
+    if (this._micNode) this._micNode.disconnect()
+    if (this._delayNode) this._delayNode.disconnect()
     if (mode === 'vad') {
       // @ts-ignore
       this._micNode.connect(this._delayNode)
@@ -1003,8 +1009,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfMute=true
+        this.client.setSelfMute(true)
       } else {
+        console.log(user)
         user.model.setMute(true)
       }
     }
@@ -1017,8 +1024,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfDeaf(true)
+        this.client.setSelfDeaf(true)
       } else {
+        console.log(user)
         user.model.setDeaf(true)
       }
     }
@@ -1031,7 +1039,8 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfMute(false)
+        console.log('unmute')
+        this.client.setSelfMute(false)
       } else {
         user.model.setMute(false)
       }
@@ -1044,8 +1053,9 @@ export default class GlobalBindings {
     }
     if (this.connected()) {
       if (user === this.selfUser) {
-        this.client.setselfDeaf(false)
+        this.client.setSelfDeaf(false)
       } else {
+        console.log(user)
         user.model.setDeaf(false)
       }
     }
