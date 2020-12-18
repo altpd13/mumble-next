@@ -15,6 +15,7 @@
     "@zeit/next-sass": "^1.0.1",
     "@zeit/next-workers": "^1.0.0",
     "drop-stream": "^1.0.0",
+    "eslint": "^7.15.0",
     "jest": "^26.6.3",
     "keyboardjs": "^2.6.4",
     "mumble-client": "git+https://github.com/altpd13/mumble-client.git#3a766f4",

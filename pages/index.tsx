@@ -61,7 +61,7 @@ class index extends React.Component {
         'vadLevel': 0.3,
         'toolbarVertical': false,
         'showAvatars': 'always', // one of 'always', 'own_channel', 'linked_channel', 'minimal_only', 'never'
-        'userCountInChannelName': false,
+        'userCountInChannelName': true,
         'audioBitrate': 40000, // bits per second
         'samplesPerPacket': 960
       },
@@ -105,6 +105,7 @@ class index extends React.Component {
       try {
         const userMedia = await initVoice((data:any) => {
           if (testVoiceHandler) {
+            console.log('testVoice Handler')
             testVoiceHandler.write(data)
           }
           if (!window.mumbleUi.client) {

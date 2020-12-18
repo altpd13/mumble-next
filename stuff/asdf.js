@@ -287,8 +287,8 @@ class SettingsDialog {
 
   totalBandwidth () {
     return MumbleClient.calcEnforcableBandwidth(
-      this.audioBitrate(),
-      this.samplesPerPacket(),
+      this.audioBitrate,
+      this.samplesPerPacket,
       true
     )
   }
