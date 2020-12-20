@@ -3,6 +3,7 @@ import React, {useEffect, useState} from "react";
 // @ts-ignore
 import ConnectDialog from "../ConnectDialog/ConnectDialog";
 import JoinDialogBox from "../JoinDialog";
+// @ts-ignore
 import ConnectTestDialog from "../TestCompo/ConnectTestDialog";
 // @ts-ignore
 import SettingsDialog from "../SettingsDialog/SettingsDialog";
@@ -15,8 +16,8 @@ const ConnectBox = (props:any) => {
   const joinOnly = false
   if (visible && !joinOnly) {
     return (
-      // <ConnectDialog hide={props.hide} onHide={props.onHide}/>
-      <ConnectTestDialog/>
+      <ConnectDialog hide={props.hide} onHide={props.onHide}/>
+      // <ConnectTestDialog/>
       // <SettingsDialog/>
     )
   } else if (visible && joinOnly) {

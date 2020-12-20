@@ -598,6 +598,8 @@ export default class GlobalBindings {
 
       // Handle messages
       client.on('message', (sender: any, message: any, channels: string | any[]) => {
+        console.log(sender)
+        console.log(`Sender: ${sender} Message: ${message} Channels: ${channels}`)
         sender = sender || {__ui: 'Server'}
         this.log.push({
           type: 'chat-message',

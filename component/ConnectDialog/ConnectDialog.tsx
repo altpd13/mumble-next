@@ -1,4 +1,5 @@
 import React from "react";
+import ConnectTestDialog from "../TestCompo/ConnectTestDialog";
 
 
 
@@ -54,20 +55,20 @@ export default class ConnectDialog extends React.Component<any, any> {
                 <td><input name="address" id="address" type="text" value={this.state.address}
                            onChange={this.handleChange}
                            placeholder={this.state.placeholderA}
-                           required/></td>
+                           /></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.port"*/>
                 <td id="connect-dialog_input_port">Port</td>
                 <td><input name="port" id="port" type="text" value={this.state.port} onChange={this.handleChange}
                            placeholder={this.state.placeholderP}
-                           required/></td>
+                           /></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.username"*/>
                 <td id="connect-dialog_input_username">Username</td>
                 <td><input name="username" id="username" type="text" value={this.state.username}
                            onChange={this.handleChange}
                            placeholder={this.state.placeholderU}
-                           required/></td>
+                           /></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.password"*/>
                 <td id="connect-dialog_input_password">Password</td>
@@ -108,6 +109,7 @@ export default class ConnectDialog extends React.Component<any, any> {
               {/*<button className="dialog-close" >Cancel</button>*/}
               <input id="connect-dialog_controls_connect" className="dialog-submit" type="submit" value="Connect"/>
             </div>
+            <ConnectTestDialog />
           </form>
         </div>
       )

@@ -8,6 +8,8 @@ import Loading from "../component/Loading/Loading";
 import ConnectBox from "../component/ConnectBox/ConnectBox";
 import {initVoice} from "../utils/voice";
 import Toolbar from "../component/Toolbar";
+import ChannelContainer from "../component/ChannelContainer/ChannelContainer";
+import Chat from "../component/Chat/Chat";
 //************ STUFF ****************/
 // async function main() {
   //   await localizationInitialize(navigator.language);
@@ -133,9 +135,19 @@ class index extends React.Component {
 
   render() {
     return (
-      <>
+      <div>
         <IndexPage />
-      </>
+        <style global jsx>{`
+      html,
+      body,
+      body > div:first-child,
+      div#__next,
+      div#__next > div,
+      div#__next > div > div {
+        height: 100%;
+      }
+    `}</style>
+      </div>
     )
   }
 }
@@ -148,10 +160,10 @@ const IndexPage = () => {
   })
 
   return (
-    <div>
+    <>
       <Loading/>
       <Container />
-    </div>
+    </>
   )
 }
 
@@ -163,6 +175,8 @@ const Container = () => {
       <div id='container' className="minimal">
         <ConnectBox />
         <Toolbar />
+        <Chat/>
+        <ChannelContainer/>
       </div>
     )
   } else {
@@ -170,6 +184,8 @@ const Container = () => {
       <div id='container'>
         <ConnectBox hide={hide} onHide={onHideChange}/>
         <Toolbar hide={hide} onHide={onHideChange}/>
+        <Chat/>
+        <ChannelContainer/>
       </div>
     )
   }
