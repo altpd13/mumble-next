@@ -1,6 +1,6 @@
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
-import React, {useEffect,useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import GlobalBindings, {initializeUI} from "../utils/index";
 import MatrixWidget from "../utils/MatrixWidget"
 // import {initVoice} from "../utils/voice";
@@ -10,29 +10,30 @@ import {initVoice} from "../utils/voice";
 import Toolbar from "../component/Toolbar";
 import ChannelContainer from "../component/ChannelContainer/ChannelContainer";
 import Chat from "../component/Chat/Chat";
+import ConnectTestDialog from "../component/TestCompo/ConnectTestDialog";
 //************ STUFF ****************/
 // async function main() {
-  //   await localizationInitialize(navigator.language);
-  //   translateEverything();
-  //   initializeUI();
-  //   initVoice((data: any) => {
-  //     if (testVoiceHandler) {
-  //       testVoiceHandler.write(data)
-  //     }
-  //     if (!window.mumbleUi.client) {
-  //       if (window.mumbleUi.voiceHandler) {
-  //         window.mumbleUi.voiceHandler.end()
-  //       }
-  //       window.mumbleUi.voiceHandler = null
-  //     } else
-  //     if (window.mumbleUi.voiceHandler) {
-  //       window.mumbleUi.voiceHandler.write(data)
-  //     }
-  //   }, (err: any) => {
-  //     log(['logentry.mic_init_error', err])
-  //   })
-  // }
-  // window.onload = main
+//   await localizationInitialize(navigator.language);
+//   translateEverything();
+//   initializeUI();
+//   initVoice((data: any) => {
+//     if (testVoiceHandler) {
+//       testVoiceHandler.write(data)
+//     }
+//     if (!window.mumbleUi.client) {
+//       if (window.mumbleUi.voiceHandler) {
+//         window.mumbleUi.voiceHandler.end()
+//       }
+//       window.mumbleUi.voiceHandler = null
+//     } else
+//     if (window.mumbleUi.voiceHandler) {
+//       window.mumbleUi.voiceHandler.write(data)
+//     }
+//   }, (err: any) => {
+//     log(['logentry.mic_init_error', err])
+//   })
+// }
+// window.onload = main
 //************ INDEX ****************/
 declare global {
   interface Window {
@@ -84,10 +85,11 @@ class index extends React.Component {
       }
     }//config.js“
     window.mumbleUi = new GlobalBindings(window.mumbleWebConfig)
+
     async function main() {
       // await localizationInitialize(navigator.language);
       // translateEverything();
-      let testVoiceHandler:any = null
+      let testVoiceHandler: any = null
       // initializeUI();
       // initVoice((data:any) => {
       //   if (testVoiceHandler) {
@@ -105,7 +107,7 @@ class index extends React.Component {
       //   log(['logentry.mic_init_error', err])
       // })
       try {
-        const userMedia = await initVoice((data:any) => {
+        const userMedia = await initVoice((data: any) => {
           if (testVoiceHandler) {
             console.log('testVoice Handler')
             testVoiceHandler.write(data)
@@ -126,17 +128,18 @@ class index extends React.Component {
       }
       initializeUI();
     }
+
     window.onload = main
   }
 
-  save(key:string,val:any) {
-    window.localStorage.setItem('mumble.'+key,val)
+  save(key: string, val: any) {
+    window.localStorage.setItem('mumble.' + key, val)
   }
 
   render() {
     return (
       <div>
-        <IndexPage />
+        <IndexPage/>
         <style global jsx>{`
       html,
       body,
@@ -154,27 +157,33 @@ class index extends React.Component {
 
 export default index
 
-//********* COMPONENTS **************//
-const IndexPage = () => {
-  useEffect(()=>{
-  })
 
+//********* COMPONENTS **************//
+
+const IndexPage = () => {
   return (
     <>
       <Loading/>
-      <Container />
+      <Container/>
     </>
   )
 }
 
 const Container = () => {
   const isMinimal = false
-  const[hide,onHideChange] = useState(false)
+  const [hide, onHideChange] = useState(false)
+  const [letter, setMessage] = useState('')
+  const [messages, setMessages] = useState([])
+  const [serverConnection, onConnection] = useState(false)
+
+  useEffect(()=>console.log(messages),[messages])
+
+
   if (isMinimal) {
     return (
       <div id='container' className="minimal">
-        <ConnectBox />
-        <Toolbar />
+        <ConnectBox/>
+        <Toolbar/>
         <Chat/>
         <ChannelContainer/>
       </div>
@@ -182,10 +191,30 @@ const Container = () => {
   } else {
     return (
       <div id='container'>
-        <ConnectBox hide={hide} onHide={onHideChange}/>
+        <ConnectBox
+          hide={hide}
+          onHide={onHideChange}
+          server={serverConnection}
+          onServer={onConnection}
+          messages={messages}
+          setMessages={setMessages}
+        />
         <Toolbar hide={hide} onHide={onHideChange}/>
-        <Chat/>
-        <ChannelContainer/>
+        <Chat
+          server={serverConnection}
+          onServer={onConnection}
+          letter={letter}
+          setMessage = {setMessage}
+          messages={messages}
+          setMessages={setMessages}
+        />
+        <ConnectTestDialog
+          letter={letter}
+          setMessage = {setMessage}
+          messages={messages}
+          setMessages={setMessages}
+        />
+        {/*<ChannelContainer/>*/}
       </div>
     )
   }

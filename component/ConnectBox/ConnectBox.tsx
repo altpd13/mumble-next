@@ -7,6 +7,8 @@ import JoinDialogBox from "../JoinDialog";
 import ConnectTestDialog from "../TestCompo/ConnectTestDialog";
 // @ts-ignore
 import SettingsDialog from "../SettingsDialog/SettingsDialog";
+import ConnectDialog1 from "../ConnectDialog/ConnectDialog1";
+import Chat from "../Chat/Chat";
 
 // @ts-ignore
 const ConnectBox = (props:any) => {
@@ -16,9 +18,15 @@ const ConnectBox = (props:any) => {
   const joinOnly = false
   if (visible && !joinOnly) {
     return (
-      <ConnectDialog hide={props.hide} onHide={props.onHide}/>
-      // <ConnectTestDialog/>
-      // <SettingsDialog/>
+      <ConnectDialog
+        hide={props.hide}
+        onHide={props.onHide}
+        server={props.server}
+        onServer={props.onServer}
+        messages={props.messages}
+        setMessages={props.setMessages}
+      />
+      // <ConnectDialog1 hide={props.hide} onHide={props.onHide}/>
     )
   } else if (visible && joinOnly) {
     return (

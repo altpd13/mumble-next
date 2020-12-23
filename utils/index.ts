@@ -949,8 +949,8 @@ export default class GlobalBindings {
   //   }
   // })
 
-  submitMessageBox = () => {
-    this.sendMessage(this.selected(), this.messageBox)
+  submitMessageBox = (message:any) => {
+    this.sendMessage(this.selected,message)
     this.messageBox = ''
   }
 
@@ -958,11 +958,11 @@ export default class GlobalBindings {
     if (this.connected()) {
       // If no target is selected, choose our own user
       if (!target) {
-        target = this.selfUser()
+        target = this.selfUser
       }
       // If target is our own user, send to our channel
-      if (target === this.selfUser()) {
-        target = target.channel()
+      if (target === this.selfUser) {
+        target = target.channel
       }
       // Send message
       target.model.sendMessage(message)

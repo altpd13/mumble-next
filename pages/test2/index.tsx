@@ -1,4 +1,5 @@
-import React from 'react'
+import React, {useEffect, useState} from 'react'
+
 const mumbleConnect = require("mumble-client-websocket")
 
 // @ts-ignore
@@ -13,10 +14,10 @@ export default class extends React.Component {
     this.worker = new ExampleWorker()
     this.worker.postMessage('from Host')
     this.worker.addEventListener('message', this.onWorkerMessage)
-    this.worker.addEventListener('message',this.logWorkerMessage)
+    this.worker.addEventListener('message', this.logWorkerMessage)
     mumbleConnect('wss://voice.johni0702.de:433/demo', {
       username: 'Test',
-    }, function (err:any, client:any) {
+    }, function (err: any, client: any) {
       if (err) throw err;
 
       // Connection established
@@ -34,7 +35,24 @@ export default class extends React.Component {
   onWorkerMessage = (event: { data: any; }) => this.setState({latestMessage: event.data})
 
   render() {
-    return <h1>Message from Worker: {this.state.latestMessage}</h1>
+    return (
+      <div>
+        <h1>Message from Worker: {this.state.latestMessage}</h1>
+        <App/>
+      </div>
+    )
     // return <h1>Fuck you</h1>
   }
+}
+
+function App() {
+  const [a, setA] = useState('a')
+  useEffect(()=>{
+    console.log(a)
+  },[a])
+  return (
+    <button onClick={()=>setA('b')}>
+      a
+    </button>
+  )
 }

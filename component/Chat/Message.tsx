@@ -1,16 +1,27 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef} from "react";
 
-const Message= () => {
+const Message = ({message}:any) => {
+  let isSentByCurrentUser = false;
 
-  return(
-    <>
-      <div className="log">
-        {/*<div className="log-entry">*/}
-        {/*  <span className="log-timestamp" data-bind="text: $root.getTimeString()"></span>*/}
-        {/*</div>*/}
-      </div>
-    </>
+  const trimmedName = () => {
+    if (message.type === 'chat-message') {
+      return message.user.name.trim().toLowerCase()
+    } else if (message.type === 'chat-message-channel-self') {
+      return
+    } else if (message.type === 'chat-message-user-self') {
+      return
+    } else if (message.type === 'welcome-message') {
+      return
+    } else if (message.type === 'generic') {
+      return
+    }
+  }
+
+  return (
+    <div>
+      {message.message}
+    </div>
   )
-}
 
-export {Message}
+}
+export default Message

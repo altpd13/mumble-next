@@ -1,76 +1,70 @@
-import React, {useContext} from "react";
+import React, {useState} from "react";
 import ConnectTestDialog from "../TestCompo/ConnectTestDialog";
-import {isConnected} from "../../pages";
 
-export default class ConnectDialog extends React.Component<any, any> {
-  constructor(props: any) {
-    super(props)
-    this.state = {
-      address: '',
-      port: '',
-      username: '',
-      password: '',
-      // placeholderA: 'northamerica.mumble.com',
-      // placeholderP: '5401',
-      // placeholderU: 'alt',
-      // hide: false
-    }
-    this.handleChange = this.handleChange.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
-    this.hideDialog = this.hideDialog.bind(this)
+const ConnectDialog1 = (props: any) => {
+  const [inputs, setInputs] = useState({
+    address: '',
+    port: '',
+    username: '',
+    password: ''
+  })
+
+  const hideDialog = () => {
+    props.onHide(!props.hide)
   }
-  handleChange = (event: any) => {
-    this.setState({
-      [event.target.name]: event.target.value
+
+  const {address, port, username, password} = inputs
+
+  const handleChange = (event: any) => {
+    const [name, value] = event.target
+    setInputs({
+      ...inputs,
+      [name]: value
     })
   }
 
-  handleSubmit(event: any) {
-    window.mumbleUi.connectDialog.address = this.state.address
-    window.mumbleUi.connectDialog.port = this.state.port
-    window.mumbleUi.connectDialog.username = this.state.username
-    window.mumbleUi.connectDialog.password = this.state.password
+  const handleSubmit = (event: any) => {
+    window.mumbleUi.connectDialog.address = address
+    window.mumbleUi.connectDialog.port = port
+    window.mumbleUi.connectDialog.username = username
+    window.mumbleUi.connectDialog.password = password
     window.mumbleUi.connectDialog.connect(window.mumbleUi)
-    this.hideDialog()
+    hideDialog()
     event.preventDefault()
   }
-  hideDialog() {
-    this.props.onHide(!this.props.hide)
-  }
-  render() {
-    if(!this.props.hide) {
-      return (
-        <div className="connect-dialog dialog">
+
+  return (
+    <>
+      {props.hide
+        ? <></>
+        : <div className="connect-dialog dialog">
           <div id="connect-dialog_title" className="dialog-header">
             Connect to Server
           </div>
-          <form onSubmit={this.handleSubmit}>
+          <form onSubmit={handleSubmit}>
             <table>
               <tbody>
               <tr /*data-bind="if: $root.config.connectDialog.address"*/>
                 <td id="connect-dialog_input_address">Address</td>
-                <td><input name="address" id="address" type="text" value={this.state.address}
-                           onChange={this.handleChange}
-                           placeholder={this.state.placeholderA}
-                           /></td>
+                <td><input name="address" id="address" type="text" value={address}
+                           onChange={handleChange}
+                /></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.port"*/>
                 <td id="connect-dialog_input_port">Port</td>
-                <td><input name="port" id="port" type="text" value={this.state.port} onChange={this.handleChange}
-                           placeholder={this.state.placeholderP}
-                           /></td>
+                <td><input name="port" id="port" type="text" value={port} onChange={handleChange}
+                /></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.username"*/>
                 <td id="connect-dialog_input_username">Username</td>
-                <td><input name="username" id="username" type="text" value={this.state.username}
-                           onChange={this.handleChange}
-                           placeholder={this.state.placeholderU}
-                           /></td>
+                <td><input name="username" id="username" type="text" value={username}
+                           onChange={handleChange}
+                /></td>
               </tr>
               <tr /*data-bind="if: $root.config.connectDialog.password"*/>
                 <td id="connect-dialog_input_password">Password</td>
-                <td><input name="password" id="password" type="text" value={this.state.password}
-                           onChange={this.handleChange}/></td>
+                <td><input name="password" id="password" type="text" value={password}
+                           onChange={handleChange}/></td>
               </tr>
               {/*<tr /*data-bind="if: $root.config.connectDialog.token"*/}
               {/*  <td id="connect-dialog_input_tokens">Tokens</td>*/}
@@ -102,15 +96,16 @@ export default class ConnectDialog extends React.Component<any, any> {
             </table>
             <div className="dialog-footer">
               <input id="connect-dialog_controls_cancel" className="dialog-close" type="button"
-                     onClick={this.hideDialog} value="Cancel"/>
+                     onClick={hideDialog} value="Cancel"/>
               {/*<button className="dialog-close" >Cancel</button>*/}
               <input id="connect-dialog_controls_connect" className="dialog-submit" type="submit" value="Connect"/>
             </div>
+            <ConnectTestDialog/>
           </form>
         </div>
-      )
-    } else {
-      return <></>
-    }
-  }
+      }
+    </>
+  )
 }
+
+export default ConnectDialog1
