@@ -1,27 +1,27 @@
-import React, {useEffect, useRef} from "react";
+import React from "react";
+import styles from '../../styles/MessageBox/Message.module.scss'
+// const styles = require('./Message.module.scss')
 
 const Message = ({message}:any) => {
   let isSentByCurrentUser = false;
 
-  const trimmedName = () => {
+  const messageUser = () => {
     if (message.type === 'chat-message') {
-      return message.user.name.trim().toLowerCase()
+      return `${message.user}: `
     } else if (message.type === 'chat-message-channel-self') {
-      return
+      return `${window.mumbleUi.connectDialog.username}: `
     } else if (message.type === 'chat-message-user-self') {
-      return
+      return `${window.mumbleUi.connectDialog.username}: `
     } else if (message.type === 'welcome-message') {
-      return
+      return  ``
     } else if (message.type === 'generic') {
-      return
+      return  ``
     }
   }
-
   return (
-    <div>
-      {message.message}
+    <div className={styles.messageContainer}>
+      <span className={styles.user}>{messageUser()}</span><span className={styles.messageContext}>{message.message}</span>
     </div>
   )
-
 }
 export default Message

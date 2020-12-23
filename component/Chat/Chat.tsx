@@ -1,13 +1,7 @@
-import React, {useEffect, useRef} from 'react'
+import React from 'react'
 import {Messages} from "./Messages";
 
 const Chat = (props: any) => {
-  // const isConnected = false
-  // const [letter, setMessage] = useState('')
-  // const [messages, setMessages] = useState([])
-
-  const chatLog: any[] = []
-  const chat = useRef()
 
   const sendMessage = (target: any, message: any) => {
     if (message.trim().length == 0) return;
@@ -26,7 +20,7 @@ const Chat = (props: any) => {
         messageChunk = {
           type: 'chat-message-channel-self',
           message: message,
-          channel: target
+          channel: target,
         }
       } else { // User
         messageChunk = {
@@ -34,9 +28,9 @@ const Chat = (props: any) => {
           message: message,
           user: target
         }
+        console.log(target)
       }
       target.model.sendMessage(message)
-      console.log(props.messages)
       props.setMessages([...props.messages,messageChunk])
     }
   }

@@ -1,14 +1,15 @@
 import React, {useEffect, useRef} from "react";
 import Message from "./Message";
 
-import ScrollToBottom from 'react-scroll-to-bottom'
-
 const Messages= ({ messages }:any) => {
 
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    if(messagesEndRef.current !== null) {
+      // @ts-ignore
+      messagesEndRef.current.scrollIntoView({behavior: "smooth"})
+    }
   }
 
   useEffect(scrollToBottom, [messages])
