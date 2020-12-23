@@ -1,6 +1,6 @@
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
-import React, {useEffect,useState} from 'react'
+import React, {useState} from 'react'
 import GlobalBindings, {initializeUI} from "../utils/index";
 import MatrixWidget from "../utils/MatrixWidget"
 // import {initVoice} from "../utils/voice";
@@ -8,29 +8,9 @@ import Loading from "../component/Loading/Loading";
 import ConnectBox from "../component/ConnectBox/ConnectBox";
 import {initVoice} from "../utils/voice";
 import Toolbar from "../component/Toolbar";
-//************ STUFF ****************/
-// async function main() {
-  //   await localizationInitialize(navigator.language);
-  //   translateEverything();
-  //   initializeUI();
-  //   initVoice((data: any) => {
-  //     if (testVoiceHandler) {
-  //       testVoiceHandler.write(data)
-  //     }
-  //     if (!window.mumbleUi.client) {
-  //       if (window.mumbleUi.voiceHandler) {
-  //         window.mumbleUi.voiceHandler.end()
-  //       }
-  //       window.mumbleUi.voiceHandler = null
-  //     } else
-  //     if (window.mumbleUi.voiceHandler) {
-  //       window.mumbleUi.voiceHandler.write(data)
-  //     }
-  //   }, (err: any) => {
-  //     log(['logentry.mic_init_error', err])
-  //   })
-  // }
-  // window.onload = main
+import ChannelContainer from "../component/ChannelContainer/ChannelContainer";
+import Chat from "../component/Chat/Chat";
+
 //************ INDEX ****************/
 declare global {
   interface Window {
@@ -82,10 +62,11 @@ class index extends React.Component {
       }
     }//config.js“
     window.mumbleUi = new GlobalBindings(window.mumbleWebConfig)
+
     async function main() {
       // await localizationInitialize(navigator.language);
       // translateEverything();
-      let testVoiceHandler:any = null
+      let testVoiceHandler: any = null
       // initializeUI();
       // initVoice((data:any) => {
       //   if (testVoiceHandler) {
@@ -103,7 +84,7 @@ class index extends React.Component {
       //   log(['logentry.mic_init_error', err])
       // })
       try {
-        const userMedia = await initVoice((data:any) => {
+        const userMedia = await initVoice((data: any) => {
           if (testVoiceHandler) {
             console.log('testVoice Handler')
             testVoiceHandler.write(data)
@@ -124,52 +105,80 @@ class index extends React.Component {
       }
       initializeUI();
     }
+
     window.onload = main
   }
 
-  save(key:string,val:any) {
-    window.localStorage.setItem('mumble.'+key,val)
+  save(key: string, val: any) {
+    window.localStorage.setItem('mumble.' + key, val)
   }
 
   render() {
     return (
-      <>
-        <IndexPage />
-      </>
+      <div>
+        <IndexPage/>
+        <style global jsx>{`
+      html,
+      body,
+      body > div:first-child,
+      div#__next,
+      div#__next > div,
+      div#__next > div > div {
+        height: 100%;
+      }
+    `}</style>
+      {/* this style tag is helper for div under id next to have 100% height */}
+      </div>
     )
   }
 }
 
 export default index
 
-//********* COMPONENTS **************//
-const IndexPage = () => {
-  useEffect(()=>{
-  })
 
+//********* COMPONENTS **************//
+
+const IndexPage = () => {
   return (
-    <div>
+    <>
       <Loading/>
-      <Container />
-    </div>
+      <Container/>
+    </>
   )
 }
 
 const Container = () => {
   const isMinimal = false
-  const[hide,onHideChange] = useState(false)
+  const [hide, onHideChange] = useState(false)//To hide ConnectionDialog
+  const [letter, setMessage] = useState('')//To send message
+  const [messages, setMessages] = useState([])//To get and display the message on div.log
+
   if (isMinimal) {
     return (
       <div id='container' className="minimal">
-        <ConnectBox />
-        <Toolbar />
+        <ConnectBox/>
+        <Toolbar/>
+        <Chat/>
+        <ChannelContainer/>
       </div>
     )
   } else {
     return (
       <div id='container'>
-        <ConnectBox hide={hide} onHide={onHideChange}/>
+        <ConnectBox
+          hide={hide}
+          onHide={onHideChange}
+          messages={messages}
+          setMessages={setMessages}
+        />
         <Toolbar hide={hide} onHide={onHideChange}/>
+        <Chat
+          letter={letter}
+          setMessage = {setMessage}
+          messages={messages}
+          setMessages={setMessages}
+        />
+        {/*<ChannelContainer/>*/}
       </div>
     )
   }

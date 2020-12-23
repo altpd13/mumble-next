@@ -3,7 +3,6 @@ import WorkerBasedMumbleConnector from '../workers/worker-client'
 import {ContinuousVoiceHandler, PushToTalkVoiceHandler, VADVoiceHandler, VoiceHandler} from './voice'
 import {filterArray} from "./filterArray";
 
-const vad =  require('voice-activity-detection')
 const mumbleConnect = require('mumble-client-websocket')
 const url = require('url')
 // const ByteBuffer = require('bytebuffer')
@@ -11,78 +10,6 @@ const MumbleClient = require('mumble-client')
 const BufferQueueNode = require('web-audio-buffer-queue')
 const audioContext = require('audio-context')
 // const keyboardjs = require('keyboardjs')
-
-const sampleConfig = {
-  // Which fields to show on the Connect to Server dialog
-  'connectDialog': {
-    'address': true,
-    'port': true,
-    'token': true,
-    'username': true,
-    'password': true,
-    'channelName': false
-  },
-  // Default values for user settings
-  // You can see your current value by typing `localStorage.getItem('mumble.$setting')` in the web console.
-  'settings': {
-    'voiceMode': 'vad', // one of 'cont' (Continuous), 'ptt' (Push-to-Talk), 'vad' (Voice Activity Detection)
-    'pttKey': 'ctrl + shift',
-    'vadLevel': 0.3,
-    'toolbarVertical': false,
-    'showAvatars': 'always', // one of 'always', 'own_channel', 'linked_channel', 'minimal_only', 'never'
-    'userCountInChannelName': false,
-    'audioBitrate': 40000, // bits per second
-    'samplesPerPacket': 960
-  },
-  // Default values (can be changed by passing a query parameter of the same name)
-  'defaults': {
-    // Connect Dialog
-    'address': '',
-    'port': '443',
-    'token': '',
-    'username': '',
-    'password': '',
-    'joinDialog': false, // replace whole dialog with single "Join Conference" button
-    'matrix': false, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
-    'avatarurl': '', // download and set the user's Mumble avatar to the image at this URL
-    // General
-    'theme': 'MetroMumbleLight'
-  }
-}
-
-// interface mumbleWebConfig {
-//   'connectDialog': {
-//     'address': boolean,
-//     'port': boolean,
-//     'token': boolean,
-//     'username': boolean,
-//     'password': boolean,
-//     'channelName': boolean
-//   },
-//   'settings': {
-//     'voiceMode': string,
-//     'pttKey': string,
-//     'vadLevel': number,
-//     'toolbarVertical': boolean,
-//     'showAvatars': string,
-//     'userCountInChannelName': boolean,
-//     'audioBitrate': number, // bits per second
-//     'samplesPerPacket': number
-//   },
-//   'defaults': {
-//     // Connect Dialog
-//     'address': string,
-//     'port': number,
-//     'token': string,
-//     'username': string,
-//     'password': string,
-//     'joinDialog': boolean, // replace whole dialog with single "Join Conference" button
-//     'matrix': boolean, // enable Matrix Widget support (mostly auto-detected; implies 'joinDialog')
-//     'avatarUrl': string, // download and set the user's Mumble avatar to the image at self URL
-//     // General
-//     'theme': string
-//   }
-// }
 
 function openContextMenu(event: any, contextMenu: any, target: any) {
   contextMenu.posX = event.clientX
@@ -598,6 +525,8 @@ export default class GlobalBindings {
 
       // Handle messages
       client.on('message', (sender: any, message: any, channels: string | any[]) => {
+        console.log(sender)
+        console.log(`Sender: ${sender} Message: ${message} Channels: ${channels}`)
         sender = sender || {__ui: 'Server'}
         this.log.push({
           type: 'chat-message',
@@ -947,8 +876,8 @@ export default class GlobalBindings {
   //   }
   // })
 
-  submitMessageBox = () => {
-    this.sendMessage(this.selected(), this.messageBox)
+  submitMessageBox = (message:any) => {
+    this.sendMessage(this.selected,message)
     this.messageBox = ''
   }
 
@@ -956,11 +885,11 @@ export default class GlobalBindings {
     if (this.connected()) {
       // If no target is selected, choose our own user
       if (!target) {
-        target = this.selfUser()
+        target = this.selfUser
       }
       // If target is our own user, send to our channel
-      if (target === this.selfUser()) {
-        target = target.channel()
+      if (target === this.selfUser) {
+        target = target.channel
       }
       // Send message
       target.model.sendMessage(message)

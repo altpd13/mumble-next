@@ -1,23 +1,21 @@
-// @ts-ignore
-import React, {useEffect, useState} from "react";
-// @ts-ignore
-import ConnectDialog from "../ConnectDialog/ConnectDialog";
+import React from "react";
 import JoinDialogBox from "../JoinDialog";
-import ConnectTestDialog from "../TestCompo/ConnectTestDialog";
-// @ts-ignore
-import SettingsDialog from "../SettingsDialog/SettingsDialog";
+import ConnectDialog from "../ConnectDialog/ConnectDialog";
 
 // @ts-ignore
-const ConnectBox = (props:any) => {
+const ConnectBox = (props: any) => {
   // const visible = window.mumbleUi//TODO: make it work god damn
   // const joinOnly = window.mumbleUi
   const visible = true
   const joinOnly = false
   if (visible && !joinOnly) {
     return (
-      // <ConnectDialog hide={props.hide} onHide={props.onHide}/>
-      <ConnectTestDialog/>
-      // <SettingsDialog/>
+      <ConnectDialog
+        hide={props.hide}
+        onHide={props.onHide}
+        messages={props.messages}
+        setMessages={props.setMessages}
+      />
     )
   } else if (visible && joinOnly) {
     return (
