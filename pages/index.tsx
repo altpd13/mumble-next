@@ -1,6 +1,6 @@
 import '../styles/MetroMumbleDark/main.scss'
 import '../styles/MetroMumbleDark/loading.scss'
-import React, {useEffect, useState} from 'react'
+import React, {useState} from 'react'
 import GlobalBindings, {initializeUI} from "../utils/index";
 import MatrixWidget from "../utils/MatrixWidget"
 // import {initVoice} from "../utils/voice";
@@ -10,30 +10,7 @@ import {initVoice} from "../utils/voice";
 import Toolbar from "../component/Toolbar";
 import ChannelContainer from "../component/ChannelContainer/ChannelContainer";
 import Chat from "../component/Chat/Chat";
-import ConnectTestDialog from "../component/TestCompo/ConnectTestDialog";
-//************ STUFF ****************/
-// async function main() {
-//   await localizationInitialize(navigator.language);
-//   translateEverything();
-//   initializeUI();
-//   initVoice((data: any) => {
-//     if (testVoiceHandler) {
-//       testVoiceHandler.write(data)
-//     }
-//     if (!window.mumbleUi.client) {
-//       if (window.mumbleUi.voiceHandler) {
-//         window.mumbleUi.voiceHandler.end()
-//       }
-//       window.mumbleUi.voiceHandler = null
-//     } else
-//     if (window.mumbleUi.voiceHandler) {
-//       window.mumbleUi.voiceHandler.write(data)
-//     }
-//   }, (err: any) => {
-//     log(['logentry.mic_init_error', err])
-//   })
-// }
-// window.onload = main
+
 //************ INDEX ****************/
 declare global {
   interface Window {
@@ -150,6 +127,7 @@ class index extends React.Component {
         height: 100%;
       }
     `}</style>
+      {/* this style tag is helper for div under id next to have 100% height */}
       </div>
     )
   }
@@ -171,13 +149,9 @@ const IndexPage = () => {
 
 const Container = () => {
   const isMinimal = false
-  const [hide, onHideChange] = useState(false)
-  const [letter, setMessage] = useState('')
-  const [messages, setMessages] = useState([])
-  const [serverConnection, onConnection] = useState(false)
-
-  useEffect(()=>console.log(messages),[messages])
-
+  const [hide, onHideChange] = useState(false)//To hide ConnectionDialog
+  const [letter, setMessage] = useState('')//To send message
+  const [messages, setMessages] = useState([])//To get and display the message on div.log
 
   if (isMinimal) {
     return (
@@ -194,21 +168,11 @@ const Container = () => {
         <ConnectBox
           hide={hide}
           onHide={onHideChange}
-          server={serverConnection}
-          onServer={onConnection}
           messages={messages}
           setMessages={setMessages}
         />
         <Toolbar hide={hide} onHide={onHideChange}/>
         <Chat
-          server={serverConnection}
-          onServer={onConnection}
-          letter={letter}
-          setMessage = {setMessage}
-          messages={messages}
-          setMessages={setMessages}
-        />
-        <ConnectTestDialog
           letter={letter}
           setMessage = {setMessage}
           messages={messages}

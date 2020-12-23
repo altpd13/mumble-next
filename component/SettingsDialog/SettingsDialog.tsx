@@ -1,5 +1,4 @@
 import React from 'react'
-import {type} from "os";
 
 export default class SettingsDialog extends React.Component<any, any> {
   rafID: number | undefined
