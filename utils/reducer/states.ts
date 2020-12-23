@@ -12,7 +12,7 @@ function serverConnection (state:any,action:any) {
 }
 
 function controlMessage (state:any,action:any) {
-
+ return [state,action]
 }
 
-export {serverConnection}
+export {serverConnection,controlMessage}
