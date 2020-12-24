@@ -1,11 +1,29 @@
 .messageContainer {
-  background: darkgreen;
+  padding:3px;
+  border-radius: 3px;
 }
 
-.user {
-  color:orangered;
+.messageContainer_Self {
+  padding:3px;
+  border-radius: 3px;
+}
+
+.messageContainer_Welcome {
+}
+
+.generic {
+}
+
+.sender {
+  color: #ff7f50;
+  font-weight: bold;
+}
+
+.self {
+  color:cadetblue;
 }
 
 .messageContext {
   color:white;
 }
+

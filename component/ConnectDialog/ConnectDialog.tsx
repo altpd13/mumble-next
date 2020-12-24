@@ -12,6 +12,11 @@ const ConnectDialog = (props: any) => {
     password: ''
   })
 
+  const getTimeString = () => {
+    return '[' + new Date().toLocaleTimeString() + '] '
+  }
+
+
   const hideDialog = () => {
     props.onHide(!props.hide)
   }
@@ -20,7 +25,7 @@ const ConnectDialog = (props: any) => {
 
     let connectLink = port === '433/demo' ? `wss://${host}/demo` : `wss://${host}:${port}`
 
-    props.setMessages(messages => [messages, {type:`generic`,message: `Connecting to ${host}`}])
+    props.setMessages(messages => [messages, {type:`generic`,time:getTimeString(),message: `Connecting to ${host}`}])
 
     log(['logentry.connecting', host])
 
@@ -54,7 +59,7 @@ const ConnectDialog = (props: any) => {
       tokens: tokens
     }).done((client: any) => {
       log(['logentry.connected'])
-      props.setMessages(messages => [...messages, {type:`generic`,message: `Connected!`}])
+      props.setMessages(messages => [...messages, {type:`generic`,time:getTimeString(),message: `Connected!`}])
       window.mumbleUi.client = client
       // Prepare for connection errors
       if (client === undefined) {
@@ -94,6 +99,7 @@ const ConnectDialog = (props: any) => {
       client.on('message', (sender: any, message: any, channels: string | any[]) => {
         sender = sender || {__ui: 'Server'}
         const messageChunk = {
+          time: getTimeString(),
           type: 'chat-message',
           user: sender.__ui.name,
           channel: channels.length > 0,
@@ -166,7 +172,7 @@ const ConnectDialog = (props: any) => {
       } else {
         const messageChunk = {
           type:'error-message',
-          message: logentry.connection_error
+          message: `logentry.connection_error`
         }
         props.setMessages(props.messages.concat(messageChunk))
         log(['logentry.connection_error', err])
