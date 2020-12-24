@@ -3,6 +3,11 @@ import {Messages} from "./Messages";
 
 const Chat = (props: any) => {
 
+  const getTimeString = () => {
+    return '[' + new Date().toLocaleTimeString() + '] '
+  }
+
+
   const sendMessage = (target: any, message: any) => {
     if (message.trim().length == 0) return;
     let messageChunk:any
@@ -18,12 +23,14 @@ const Chat = (props: any) => {
       // Send message
       if (target.users) { // Channel
         messageChunk = {
+          time: getTimeString(),
           type: 'chat-message-channel-self',
           message: message,
           channel: target,
         }
       } else { // User
         messageChunk = {
+          time: getTimeString(),
           type: 'chat-message-user-self',
           message: message,
           user: target
