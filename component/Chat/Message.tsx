@@ -4,7 +4,7 @@ import '../../styles/MessageBox/Message.module.scss'
 
 const Message = ({message}: any) => {
 
-  const messageUser = () => {
+  const messageContext = () => {
 
     switch (message.type) {
       case 'chat-message': {
@@ -51,7 +51,7 @@ const Message = ({message}: any) => {
   }
   return (
     <>
-      {messageUser()}
+      {messageContext()}
     </>
   )
 }
