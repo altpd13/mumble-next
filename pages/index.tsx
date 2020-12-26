@@ -152,6 +152,7 @@ const Container = () => {
   const [hide, onHideChange] = useState(false)//To hide ConnectionDialog
   const [letter, setMessage] = useState('')//To send message
   const [messages, setMessages] = useState([])//To get and display the message on div.log
+  const [channels,setChannels] = useState([])
 
   if (isMinimal) {
     return (
@@ -170,6 +171,8 @@ const Container = () => {
           onHide={onHideChange}
           messages={messages}
           setMessages={setMessages}
+          channels = {channels}
+          setChannels = {setChannels}
         />
         <Toolbar hide={hide} onHide={onHideChange}/>
         <Chat
@@ -178,7 +181,10 @@ const Container = () => {
           messages={messages}
           setMessages={setMessages}
         />
-        {/*<ChannelContainer/>*/}
+        <ChannelContainer
+          channels = {channels}
+          setChannels= {channels}
+        />
       </div>
     )
   }
