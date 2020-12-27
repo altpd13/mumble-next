@@ -7,7 +7,7 @@ const audioContext = require('audio-context')
 
 
 
-const connect = (username: string, host: string, port: string, tokens: string[], password: string, channelName: string, setMessages:any,messages:any,channels:any,setChannels:any) => {
+const connect = (username: string, host: string, port: string, tokens: string[], password: string, channelName: string, setMessages:any,messages:any,channels:any,setChannels:any,users:any,setUsers:any) => {
 
   let connectLink = port === '433/demo' ? `wss://${host}/demo` : `wss://${host}:${port}`
 
@@ -77,12 +77,19 @@ const connect = (username: string, host: string, port: string, tokens: string[],
     }
     registerChannel(client.root, "")
     // Register all users
-    client.users.forEach((user: any) => _newUser(user))
-
+    client.users.forEach((user: any) => {
+      _newUser(user)
+      setUsers(users => [...users,user])
+    })
     // Register future channels
     client.on('newChannel', (channel: any) => window.mumbleUi.newChannel(channel))
     // Register future users
-    client.on('newUser', (user: any) => window.mumbleUi._newUser(user))
+    client.on('newUser', (user: any) => {
+      _newUser(user)
+      console.log(user)
+      console.log(user._username)
+      setUsers(users => [...users,user])
+    })
 
     // Handle messages
     client.on('message', (sender: any, message: any, channels: string | any[]) => {

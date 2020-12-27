@@ -17,6 +17,8 @@ const ConnectBox = (props: any) => {
         setMessages={props.setMessages}
         channels={props.channels}
         setChannels={props.setChannels}
+        users={props.users}
+        setUsers={props.setUsers}
       />
     )
   } else if (visible && joinOnly) {

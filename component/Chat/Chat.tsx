@@ -4,7 +4,6 @@ import getTimeString from "../../utils/getTimeString";
 
 const Chat = (props: any) => {
 
-
   const sendMessage = (target: any, message: any) => {
     if (message.trim().length == 0) return;
     let messageChunk:any

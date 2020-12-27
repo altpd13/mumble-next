@@ -7,7 +7,7 @@ import MatrixWidget from "../utils/MatrixWidget"
 import Loading from "../component/Loading/Loading";
 import ConnectBox from "../component/ConnectBox/ConnectBox";
 import {initVoice} from "../utils/voice";
-import Toolbar from "../component/Toolbar";
+import Toolbar from "../component/Toolbar/Toolbar";
 import ChannelContainer from "../component/ChannelContainer/ChannelContainer";
 import Chat from "../component/Chat/Chat";
 
@@ -153,6 +153,7 @@ const Container = () => {
   const [letter, setMessage] = useState('')//To send message
   const [messages, setMessages] = useState([])//To get and display the message on div.log
   const [channels,setChannels] = useState([])
+  const [users,setUsers] = useState([])
 
   if (isMinimal) {
     return (
@@ -173,6 +174,8 @@ const Container = () => {
           setMessages={setMessages}
           channels = {channels}
           setChannels = {setChannels}
+          users = {users}
+          setUsers={setUsers}
         />
         <Toolbar hide={hide} onHide={onHideChange}/>
         <Chat
@@ -184,6 +187,8 @@ const Container = () => {
         <ChannelContainer
           channels = {channels}
           setChannels= {channels}
+          users={users}
+          setUsers={setUsers}
         />
       </div>
     )

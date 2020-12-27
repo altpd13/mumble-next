@@ -10,7 +10,7 @@ const BufferQueueNode = require('web-audio-buffer-queue')
 
 const ConnectDialog = (props: any) => {
   const [inputs, setInputs] = useState({
-    address: `voice.johni0702.de`,
+    address: `voice.disomnis.com`,
     port: '433/demo',
     username: '',
     password: ''
@@ -30,7 +30,13 @@ const ConnectDialog = (props: any) => {
       window.mumbleUi.connectDialog.tokens,
       window.mumbleUi.connectDialog.password,
       window.mumbleUi.connectDialog.channelName,
-      props.setMessages, props.messages, props.channels, props.setChannels)
+      props.setMessages,
+      props.messages,
+      props.channels,
+      props.setChannels,
+      props.users,
+      props.setUsers
+      )
   }
 
   const {address, port, username, password} = inputs

@@ -104,7 +104,6 @@ const _newUser = (user: any) => {
   }
 
   user.on('update', (actor: any, properties: any) => {
-    console.log('user update')
     Object.entries(simpleProperties).forEach(key => {
       if (properties[key[0]] !== undefined) {
         ui[key[1]] = properties[key[0]]
