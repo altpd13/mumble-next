@@ -462,6 +462,7 @@ export default class GlobalBindings {
     // this.connector.setSampleRate(audioContext().sampleRate)
 
     let ctx = audioContext()
+
     if (!this.webrtc) {
       this.fallbackConnector.setSampleRate(ctx.sampleRate)
     }
