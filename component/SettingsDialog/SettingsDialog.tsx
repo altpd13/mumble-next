@@ -23,8 +23,6 @@ export default class SettingsDialog extends React.Component<any, any> {
   handleChange = (event: any) => {
     const name = event.target.name
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value
-    console.log(name)
-    console.log(value)
     this.setState({
       [name]: value
     })

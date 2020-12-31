@@ -102,67 +102,70 @@ const _newUser = (user: any) => {
     ui.channel.users.push(ui)
     ui.channel.users.sort(compareUsers)
   }
-
-  user.on('update', (actor: any, properties: any) => {
-    Object.entries(simpleProperties).forEach(key => {
-      if (properties[key[0]] !== undefined) {
-        ui[key[1]] = properties[key[0]]
-      }
-    })
-    if (properties.channel !== undefined) {
-      if (ui.channel) {
-        ui.channel.users.remove
-      }
-      ui.channel = properties.channel.__ui
-      ui.channel.users.push(ui)
-      ui.channel.users.sort(compareUsers)
-      window.mumbleUi.updateLinks()
-    }
-    if (properties.textureHash !== undefined) {
-      // Invalidate avatar texture when its hash has changed
-      // If the avatar is still visible, self will trigger a fetch of the new one.
-      ui.rawTexture(null)
-    }
-  }).on('remove', () => {
-    if (ui.channel) {
-      const itemToFind = ui.channel.users.find(function (item: any) {
-        return item === ui
-      })
-      const idx = ui.channel.users.indexOf(itemToFind)
-      if (idx > -1) ui.channel.users.splice(idx, 1)
-      // ui.channel.users.remove(ui)
-    }
-  }).on('voice', (stream: any) => {
-    console.log(`User ${user.username} started takling`)
-    let userNode: any
-    if (!window.mumbleUi.webrtc) {
-      userNode = new BufferQueueNode({
-        audioContext: audioContext()
-      })
-      userNode.connect(audioContext().destination)
-    }
-    if (stream.target === 'normal') {
-      ui.talking = 'on'
-    } else if (stream.target === 'shout') {
-      ui.talking = 'shout'
-    } else if (stream.target === 'whisper') {
-      ui.talking = 'whisper'
-    }
-
-    stream.on('data', (data: any) => {
-      if (window.mumbleUi.webrtc) {
-        // mumble-client is in WebRTC mode, no pcm data should arrive this way
-      } else {
-        userNode.write(data.buffer)
-      }
-    }).on('end', () => {
-      console.log(`User ${user.username} stopped takling`)
-      ui.talking = 'off'
-      if (!window.mumbleUi.webrtc) {
-        userNode.end()
-      }
-    })
-  })
+  // user.on('update', (actor: any, properties: any) => {
+  //   console.log('updates')
+  //   Object.entries(simpleProperties).forEach(key => {
+  //     if (properties[key[0]] !== undefined) {
+  //       ui[key[1]] = properties[key[0]]
+  //     }
+  //   })
+  //   if (properties.channel !== undefined) {
+  //     if (ui.channel) {
+  //       ui.channel.users.remove
+  //     }
+  //     ui.channel = properties.channel.__ui
+  //     ui.channel.users.push(ui)
+  //     ui.channel.users.sort(compareUsers)
+  //     window.mumbleUi.updateLinks()
+  //   }
+  //   if (properties.textureHash !== undefined) {
+  //     // Invalidate avatar texture when its hash has changed
+  //     // If the avatar is still visible, self will trigger a fetch of the new one.
+  //     ui.rawTexture(null)
+  //   }
+  // }).on('remove', () => {
+  //   console.log('remove')
+  //   if (ui.channel) {
+  //     const itemToFind = ui.channel.users.find(function (item: any) {
+  //       return item === ui
+  //     })
+  //     const idx = ui.channel.users.indexOf(itemToFind)
+  //     if (idx > -1) ui.channel.users.splice(idx, 1)
+  //     // ui.channel.users.remove(ui)
+  //   }
+  // }).on('voice', (stream: any) => {
+  //   console.log('voice')
+  //   console.log(`User ${user.username} started takling`)
+  //   let userNode: any
+  //   if (!window.mumbleUi.webrtc) {
+  //     userNode = new BufferQueueNode({
+  //       audioContext: audioContext()
+  //     })
+  //     userNode.connect(audioContext().destination)
+  //   }
+  //   if (stream.target === 'normal') {
+  //     ui.talking = 'on'
+  //   } else if (stream.target === 'shout') {
+  //     ui.talking = 'shout'
+  //   } else if (stream.target === 'whisper') {
+  //     ui.talking = 'whisper'
+  //   }
+  //
+  //   stream.on('data', (data: any) => {
+  //     if (window.mumbleUi.webrtc) {
+  //       // mumble-client is in WebRTC mode, no pcm data should arrive this way
+  //     } else {
+  //       userNode.write(data.buffer)
+  //     }
+  //   }).on('end', () => {
+  //     console.log('voice end')
+  //     console.log(`User ${user.username} stopped takling`)
+  //     ui.talking = 'off'
+  //     if (!window.mumbleUi.webrtc) {
+  //       userNode.end()
+  //     }
+  //   })
+  // })
 }
 
 export default _newUser

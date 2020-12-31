@@ -1,7 +1,7 @@
 import React, {Component} from 'react'
 
 // @ts-ignore
-import ExampleWorker from "../../workers/ex.worker";
+import ExampleWorker from "../../workers/test/ex.worker";
 import Promise from "promise";
 
 export default class Test3 extends Component<any, any> {

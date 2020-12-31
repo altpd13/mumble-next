@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import GlobalBindings, {log} from "../../utils";
 import compareUsers from "../../utils/compareUsers";
 import openContextMenu from "../../utils/openContextMenu";
@@ -24,7 +24,7 @@ const ConnectDialog = (props: any) => {
 
   function connectToServer(ui: GlobalBindings) {
     if (ui.detectWebRTC) {
-      ui.webrtc = false
+      ui.webrtc = false // Lazy :P
     }
     connect(window.mumbleUi.connectDialog.username,
       window.mumbleUi.connectDialog.address,
@@ -38,7 +38,7 @@ const ConnectDialog = (props: any) => {
       props.setChannels,
       props.users,
       props.setUsers
-      )
+    )
   }
 
   const {address, port, username, password} = inputs
@@ -108,8 +108,7 @@ const ConnectDialog = (props: any) => {
   )
 }
 
-const connect = (username: string, host: string, port: string, tokens: string[], password: string, channelName: string, setMessages:any,messages:any,channels:any,setChannels:any,users:any,setUsers:any) => {
-  console.log(window.mumbleUi.webrtc)
+const connect = (username: string, host: string, port: string, tokens: string[], password: string, channelName: string, setMessages: any, messages: any, channels: any, setChannels: any, users: any, setUsers: any) => {
   let connectLink = port === '443/demo' ? `wss://${host}/demo` : `wss://${host}:${port}`
 
   setMessages(messages => [messages, {
@@ -138,14 +137,14 @@ const connect = (username: string, host: string, port: string, tokens: string[],
   window.mumbleUi.fallbackConnector.connect(connectLink, {
     username: username,
     password: password,
-    // webrtc: window.mumbleUi.webrtc ? {
-    //   enabled: true,
-    //   required: true,
-    //   mic: window.mumbleUi._delayedMicNode.stream,
-    //   audioContext: ctx
-    // } : {
-    //   enabled: false,
-    // },
+    webrtc: window.mumbleUi.webrtc ? {
+      enabled: true,
+      required: true,
+      mic: window.mumbleUi._delayedMicNode.stream,
+      audioContext: ctx
+    } : {
+      enabled: false,
+    },
     tokens: tokens
   }).done((client: any) => {
     log(['logentry.connected'])
@@ -169,25 +168,26 @@ const connect = (username: string, host: string, port: string, tokens: string[],
     }
 
     const registerChannel = (channel: any, channelPath: string) => {
-      newChannel(channel,channels,setChannels)
+      newChannel(channel, channels, setChannels)
       if (channelPath === channelName) {
         client.this.setChannel(channel)
       }
       channel.children.forEach((ch: { name: string }) => registerChannel(ch, channelPath + "/" + ch.name))
     }
     registerChannel(client.root, "")
+
     // Register all users
     client.users.forEach((user: any) => {
       _newUser(user)
-      setUsers(users => [...users,user])
+      setUsers(users => [...users, user])
     })
     // Register future channels
     client.on('newChannel', (channel: any) => window.mumbleUi.newChannel(channel))
     // Register future users
-    // client.on('newUser', (user: any) => {
-    //   _newUser(user)
-    //   setUsers(users => [...users,user])
-    // })
+    client.on('newUser', (user: any) => {
+      _newUser(user)
+      setUsers(users => [...users, user])
+    })
 
     // Handle messages
     client.on('message', (sender: any, message: any, channels: string | any[]) => {
@@ -241,7 +241,7 @@ const connect = (username: string, host: string, port: string, tokens: string[],
       })
     }
 
-    // Startup audio input processing
+// Startup audio input processing
     window.mumbleUi.updateVoiceHandler()
     // Tell server our mute/deaf state (if necessary)
     if (window.mumbleUi.selfDeaf) {

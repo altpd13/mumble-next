@@ -11,8 +11,8 @@ const Messages= ({ messages }:any) => {
       messagesEndRef.current.scrollIntoView({behavior: "smooth"})
     }
   }
-
-  useEffect(scrollToBottom, [messages])
+  //
+  // useEffect(scrollToBottom, [messages])
 
   return(
     <div>

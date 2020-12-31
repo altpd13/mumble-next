@@ -49,6 +49,7 @@ const Message = ({message}: any) => {
       }
     }
   }
+
   return (
     <>
       {messageContext()}
