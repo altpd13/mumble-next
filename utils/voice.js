@@ -111,11 +111,11 @@ export class VADVoiceHandler extends VoiceHandler {
     const self = this
     this._vad = vad(audioContext(), theUserMedia, {
       onVoiceStart () {
-        console.log('vad: start')
+        // console.log('vad: start')
         self._active = true
       },
       onVoiceStop () {
-        console.log('vad: stop')
+        // console.log('vad: stop')
         self._stopOutbound()
         self._active = false
       },

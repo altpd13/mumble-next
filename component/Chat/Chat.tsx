@@ -1,12 +1,8 @@
 import React from 'react'
 import {Messages} from "./Messages";
+import getTimeString from "../../utils/getTimeString";
 
 const Chat = (props: any) => {
-
-  const getTimeString = () => {
-    return '[' + new Date().toLocaleTimeString() + '] '
-  }
-
 
   const sendMessage = (target: any, message: any) => {
     if (message.trim().length == 0) return;

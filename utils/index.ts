@@ -112,7 +112,7 @@ export class ConnectDialog {
 
   connect(ui: GlobalBindings) {
     if (ui.detectWebRTC) {
-      ui.webrtc = true
+      ui.webrtc = false
     }
     ui.connect(this.username, this.address, this.port, this.tokens, this.password, this.channelName)
   }
@@ -411,8 +411,8 @@ export default class GlobalBindings {
     this.selfDeaf = false
     this.selfMute = false
     this.voiceHandler = null
-    this.detectWebRTC = true
-    this.webrtc = true
+    this.detectWebRTC = false
+    this.webrtc = false
     this.fallbackConnector = new WorkerBasedMumbleConnector()
     this.webrtcConnector = {connect: mumbleConnect}
 
@@ -462,6 +462,7 @@ export default class GlobalBindings {
     // this.connector.setSampleRate(audioContext().sampleRate)
 
     let ctx = audioContext()
+
     if (!this.webrtc) {
       this.fallbackConnector.setSampleRate(ctx.sampleRate)
     }
@@ -679,64 +680,64 @@ export default class GlobalBindings {
       ui.channel.users.sort(compareUsers)
     }
 
-    user.on('update', (actor:any ,properties: any) => {
-      Object.entries(simpleProperties).forEach(key => {
-        if (properties[key[0]] !== undefined) {
-          ui[key[1]] = properties[key[0]]
-        }
-      })
-      if (properties.channel !== undefined) {
-        if (ui.channel) {
-          ui.channel.users.remove
-        }
-        ui.channel = properties.channel.__ui
-        ui.channel.users.push(ui)
-        ui.channel.users.sort(compareUsers)
-        this.updateLinks()
-      }
-      if (properties.textureHash !== undefined) {
-        // Invalidate avatar texture when its hash has changed
-        // If the avatar is still visible, self will trigger a fetch of the new one.
-        ui.rawTexture(null)
-      }
-    }).on('remove', () => {
-      if (ui.channel) {
-        const itemToFind = ui.channel.users.find(function(item:any) {return item === ui})
-        const idx = ui.channel.users.indexOf(itemToFind)
-        if (idx > -1) ui.channel.users.splice(idx, 1)
-        // ui.channel.users.remove(ui)
-      }
-    }).on('voice', (stream: any) => {
-      console.log(`User ${user.username} started takling`)
-      let userNode: any
-      if (!this.webrtc) {
-        userNode = new BufferQueueNode({
-          audioContext: audioContext()
-        })
-        userNode.connect(audioContext().destination)
-      }
-      if (stream.target === 'normal') {
-        ui.talking = 'on'
-      } else if (stream.target === 'shout') {
-        ui.talking = 'shout'
-      } else if (stream.target === 'whisper') {
-        ui.talking = 'whisper'
-      }
-
-      stream.on('data', (data: any) => {
-        if (this.webrtc) {
-          // mumble-client is in WebRTC mode, no pcm data should arrive this way
-        } else {
-          userNode.write(data.buffer)
-        }
-      }).on('end', () => {
-        console.log(`User ${user.username} stopped takling`)
-        ui.talking = 'off'
-        if (!this.webrtc) {
-          userNode.end()
-        }
-      })
-    })
+    // user.on('update', (actor:any ,properties: any) => {
+    //   Object.entries(simpleProperties).forEach(key => {
+    //     if (properties[key[0]] !== undefined) {
+    //       ui[key[1]] = properties[key[0]]
+    //     }
+    //   })
+    //   if (properties.channel !== undefined) {
+    //     if (ui.channel) {
+    //       ui.channel.users.remove
+    //     }
+    //     ui.channel = properties.channel.__ui
+    //     ui.channel.users.push(ui)
+    //     ui.channel.users.sort(compareUsers)
+    //     this.updateLinks()
+    //   }
+    //   if (properties.textureHash !== undefined) {
+    //     // Invalidate avatar texture when its hash has changed
+    //     // If the avatar is still visible, self will trigger a fetch of the new one.
+    //     ui.rawTexture(null)
+    //   }
+    // }).on('remove', () => {
+    //   if (ui.channel) {
+    //     const itemToFind = ui.channel.users.find(function(item:any) {return item === ui})
+    //     const idx = ui.channel.users.indexOf(itemToFind)
+    //     if (idx > -1) ui.channel.users.splice(idx, 1)
+    //     // ui.channel.users.remove(ui)
+    //   }
+    // }).on('voice', (stream: any) => {
+    //   console.log(`User ${user.username} started takling`)
+    //   let userNode: any
+    //   if (!this.webrtc) {
+    //     userNode = new BufferQueueNode({
+    //       audioContext: audioContext()
+    //     })
+    //     userNode.connect(audioContext().destination)
+    //   }
+    //   if (stream.target === 'normal') {
+    //     ui.talking = 'on'
+    //   } else if (stream.target === 'shout') {
+    //     ui.talking = 'shout'
+    //   } else if (stream.target === 'whisper') {
+    //     ui.talking = 'whisper'
+    //   }
+    //
+    //   stream.on('data', (data: any) => {
+    //     if (this.webrtc) {
+    //       // mumble-client is in WebRTC mode, no pcm data should arrive this way
+    //     } else {
+    //       userNode.write(data.buffer)
+    //     }
+    //   }).on('end', () => {
+    //     console.log(`User ${user.username} stopped takling`)
+    //     ui.talking = 'off'
+    //     if (!this.webrtc) {
+    //       userNode.end()
+    //     }
+    //   })
+    // })
   }
 
   newChannel = (channel: any) => {
@@ -943,7 +944,6 @@ export default class GlobalBindings {
       if (user === this.selfUser) {
         this.client.setSelfMute(true)
       } else {
-        console.log(user)
         user.model.setMute(true)
       }
     }
@@ -958,7 +958,6 @@ export default class GlobalBindings {
       if (user === this.selfUser) {
         this.client.setSelfDeaf(true)
       } else {
-        console.log(user)
         user.model.setDeaf(true)
       }
     }
