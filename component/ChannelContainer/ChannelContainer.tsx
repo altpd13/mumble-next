@@ -6,7 +6,7 @@ const ChannelContainer = ({channels, setChannels, users, setUsers}: any) => {
   return (
     <div className="channel-root-container">
       <div className={'channel-root'}>
-        {users.map((user: any, i: number) => <div key={i}><User user={user}></User></div>)}
+        {users.map((user: any, i: number) => <div key={i}><User user={user} users={users} setUsers={setUsers}></User></div>)}
       </div>
     </div>
   )

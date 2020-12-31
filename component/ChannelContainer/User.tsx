@@ -6,7 +6,7 @@ import vad from 'voice-activity-detection'
 const BufferQueueNode = require('web-audio-buffer-queue')
 const audioContext = require('audio-context')
 
-export const User = ({user}: any) => {
+export const User = ({user,users,setUsers}: any) => {
   const [userinfo, setUserinfo] = useState({})
   const [userTalk, setTalk] = useState(false)
   const [userDeaf, setDeaf] = useState()
@@ -14,9 +14,7 @@ export const User = ({user}: any) => {
   const [isUserSelf, setUserSelf] = useState(false)
 
   useEffect(() => {
-    console.log(window.mumbleUi.connectDialog.username)
       if (window.mumbleUi.connectDialog.username === user.username) {
-        console.log('selfUser')
         setUserSelf(true)
         let level = window.mumbleUi.settings.vadLevel
 
@@ -160,6 +158,7 @@ export const User = ({user}: any) => {
         const itemToFind = ui.channel.users.find(function (item: any) {
           return item === ui
         })
+        setUsers(users.filter(user => user.__ui !== itemToFind))
         const idx = ui.channel.users.indexOf(itemToFind)
         if (idx > -1) ui.channel.users.splice(idx, 1)
         // ui.channel.users.remove(ui)
