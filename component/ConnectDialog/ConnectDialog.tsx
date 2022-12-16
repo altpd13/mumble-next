@@ -12,7 +12,7 @@ const BufferQueueNode = require('web-audio-buffer-queue')
 
 const ConnectDialog = (props: any) => {
   const [inputs, setInputs] = useState({
-    address: `voice.disomnis.com`,
+    address: `voice.johni0702.de`,
     port: '443/demo',
     username: '',
     password: ''

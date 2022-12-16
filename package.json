@@ -22,7 +22,7 @@
     "mumble-client": "1.3.0",
     "mumble-client-codecs-browser": "git+https://github.com/altpd13/mumble-client-codecs-browser.git",
     "next": "latest",
-    "node-sass": "^4.7.2",
+    "node-sass": "^8.0.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "subworkers": "^1.0.1",
